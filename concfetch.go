@@ -8,6 +8,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -15,10 +16,16 @@ import (
 	//"time"
 )
 
+var semacount *int = flag.Int("sema", 20, "semaphore count")
+var sema chan struct{}
 var wg sync.WaitGroup
 
 func main() {
 	//start := time.Now()
+	flag.Parse()
+	sema = make(chan struct{}, *semacount)
+	//fmt.Printf("sema=%d\n", *semacount)
+
 	input := bufio.NewScanner(os.Stdin)
 	for input.Scan() {
 		url := input.Text()
@@ -31,7 +38,6 @@ func main() {
 
 //!+sema
 // sema is a counting semaphore for limiting concurrency in fetch.
-var sema = make(chan struct{}, 20)
 
 func fetch(url string) {
 	sema <- struct{}{}        // acquire token
