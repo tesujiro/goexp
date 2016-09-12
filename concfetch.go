@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"os"
 	"sync"
-	//"time"
+	"time"
 )
 
 var semacount *int = flag.Int("sema", 20, "semaphore count")
@@ -18,7 +18,6 @@ var sema chan struct{}
 var wg sync.WaitGroup
 
 func main() {
-	//start := time.Now()
 	flag.Parse()
 	sema = make(chan struct{}, *semacount)
 	//fmt.Printf("sema=%d\n", *semacount)
@@ -30,7 +29,6 @@ func main() {
 		go fetch(url)
 	}
 	wg.Wait()
-	//fmt.Printf("%.2fs elapsed\n",time.Since(start).Seconds())
 }
 
 //!+sema
@@ -42,13 +40,15 @@ func fetch(url string) {
 	// ...
 	//!-sema
 
+	start := time.Now()
 	defer wg.Done()
 	resp, err := http.Get(url)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "fetch: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Printf("%s %s\n", resp.Status, url)
+	fmt.Printf("%d %s %6.6f\n", resp.StatusCode, url, time.Since(start).Seconds())
+	//fmt.Printf("%.2fs elapsed\n",time.Since(start).Seconds())
 	resp.Body.Close()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "fetch: reading %s: %v\n", url, err)
