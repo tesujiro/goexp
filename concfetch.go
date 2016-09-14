@@ -21,22 +21,22 @@ var tps *int = flag.Int("tps", 60, "target transaction / second")
 var wg sync.WaitGroup
 
 func main() {
+	var start = time.Now()
 	flag.Parse()
 	sema = make(chan struct{}, *semacount)
-	var interval = time.Duration(float64(1000)/float64(*tps)*0.9) * time.Millisecond
-	//fmt.Printf("interval=%s (%f)\n", interval, interval)
-	//fmt.Printf("sema=%d\n", *semacount)
 
 	input := bufio.NewScanner(os.Stdin)
-	for input.Scan() {
-		start := time.Now()
+	for i := 0; input.Scan(); i++ {
 		url := input.Text()
 		wg.Add(1)
 		go fetch(url)
-		//time.Sleep(interval)
-		time.Sleep(interval - time.Since(start))
-		//start = time.Now()
+		// sleep difference expected time from elapsed time
+		var wait = time.Duration(float64((i+1) / *tps))*time.Second - time.Since(start)
+		if wait > 0 {
+			time.Sleep(wait)
+		}
 	}
+	//fmt.Printf("%.2fs elapsed\n", time.Since(start).Seconds())
 	wg.Wait()
 }
 
