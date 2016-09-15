@@ -9,13 +9,16 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"regexp"
 	"sync"
 	"time"
 )
 
 // sema is a counting semaphore for limiting concurrency in http requesting.
-var sema chan struct{}
-var wg sync.WaitGroup
+var (
+	sema chan struct{}
+	wg   sync.WaitGroup
+)
 
 func wave(concurrency int, tps int, buf io.Reader) {
 	var start = time.Now()
@@ -23,9 +26,20 @@ func wave(concurrency int, tps int, buf io.Reader) {
 	input := bufio.NewScanner(buf)
 
 	for i := 0; input.Scan(); i++ {
-		url := input.Text()
 		wg.Add(1)
-		go fetch(url)
+
+		line := input.Text()
+		rep := regexp.MustCompile(`[\s\t\r]+`)
+		col := rep.Split(line, -1)
+
+		var method = col[0]
+		var url = col[1]
+
+		/* for i := 0; i < len(col); i++ {
+			fmt.Printf("col[%d]=%s\n", i, col[i])
+		} */
+
+		go fetch(method, url)
 
 		// sleep difference expected time from elapsed time
 		var wait = time.Duration(float64((i+1)/tps))*time.Second - time.Since(start)
@@ -37,24 +51,25 @@ func wave(concurrency int, tps int, buf io.Reader) {
 	wg.Wait()
 }
 
-func fetch(url string) {
+func fetch(method, url string) {
 	sema <- struct{}{}        // acquire token
 	defer func() { <-sema }() // release token
-
-	start := time.Now()
 	defer wg.Done()
-	resp, err := http.Get(url)
+	start := time.Now()
+
+	req, _ := http.NewRequest(method, url, nil)
+
+	client := new(http.Client)
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "fetch: %v\n", err)
+		fmt.Fprintf(os.Stderr, "http.Client.Do(): %v\n", err)
 		os.Exit(1)
 	}
+
+	defer resp.Body.Close()
+
 	fmt.Printf("%d %s %6.6f\n", resp.StatusCode, url, time.Since(start).Seconds())
-	//fmt.Printf("%.2fs elapsed\n",time.Since(start).Seconds())
-	resp.Body.Close()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "fetch: reading %s: %v\n", url, err)
-		os.Exit(1)
-	}
 }
 
 //!-
