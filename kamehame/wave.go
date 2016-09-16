@@ -71,7 +71,12 @@ func getTemplate(tmpl string) *template.Template {
 	if !ok {
 		//fmt.Printf("NEW==%s==\n", tmpl)
 		//t = template.Must(template.New(path.Base(tmpl)).Funcs(funcMap).ParseFiles(tmpl))
-		t, _ = template.New(path.Base(tmpl)).Funcs(funcMap).ParseFiles(tmpl)
+		var err error
+		t, err = template.New(path.Base(tmpl)).Funcs(funcMap).ParseFiles(tmpl)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "template.ParseFIles(%s): %v\n", tmpl, err)
+			os.Exit(1)
+		}
 		templates[tmpl] = t
 	}
 	return t
