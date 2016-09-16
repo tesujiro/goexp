@@ -5,12 +5,15 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"path"
 	"regexp"
 	"sync"
+	"text/template"
 	"time"
 )
 
@@ -34,12 +37,13 @@ func wave(concurrency int, tps int, buf io.Reader) {
 
 		var method = col[0]
 		var url = col[1]
+		var tmpl = col[2]
 
 		/* for i := 0; i < len(col); i++ {
 			fmt.Printf("col[%d]=%s\n", i, col[i])
 		} */
 
-		go fetch(method, url)
+		go fetch(method, url, tmpl)
 
 		// sleep difference expected time from elapsed time
 		var wait = time.Duration(float64((i+1)/tps))*time.Second - time.Since(start)
@@ -51,13 +55,53 @@ func wave(concurrency int, tps int, buf io.Reader) {
 	wg.Wait()
 }
 
-func fetch(method, url string) {
+var (
+	templates = make(map[string]*template.Template)
+	count     = 0
+	funcMap   = template.FuncMap{
+		"increment": func() int {
+			count++
+			return count
+		},
+	}
+)
+
+func getTemplate(tmpl string) *template.Template {
+	if t, ok := templates[tmpl]; !ok {
+		//fmt.Printf("NEW==%s==\n", tmpl)
+		//t = template.Must(template.New(path.Base(tmpl)).Funcs(funcMap).ParseFiles(tmpl))
+		t, _ = template.New(path.Base(tmpl)).Funcs(funcMap).ParseFiles(tmpl)
+		templates[tmpl] = t
+		return t
+	}
+	return templates[tmpl]
+}
+
+func getPostRequest(url, tmpl string) *http.Request {
+	// TODO: JSON以外も対応すること
+	jsonBuf := new(bytes.Buffer)
+	getTemplate(tmpl).Execute(jsonBuf, nil)
+	//getTemplate(tmpl).Execute(os.Stderr, nil)
+	req, _ := http.NewRequest("POST", url, jsonBuf)
+	req.Header.Set("X-Custom-Header", "myvalue")
+	req.Header.Set("Content-Type", "application/json")
+	return req
+}
+
+func fetch(method, url, tmpl string) {
 	sema <- struct{}{}        // acquire token
 	defer func() { <-sema }() // release token
 	defer wg.Done()
 	start := time.Now()
 
-	req, _ := http.NewRequest(method, url, nil)
+	var req *http.Request
+	switch method {
+	case "POST":
+		req = getPostRequest(url, tmpl)
+
+	case "GET":
+		req, _ = http.NewRequest(method, url, nil)
+	}
 
 	client := new(http.Client)
 	resp, err := client.Do(req)

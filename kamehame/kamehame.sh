@@ -1,17 +1,18 @@
 #!/bin/sh
 
 INPUT_COUNT=1000
-INPUT_COUNT=600
+INPUT_COUNT=60
 #COMMAND="./fetchstdin"
 COMMAND="./kamehame -conc 100 -tps 60"
 
 url_list()
 {
     cat <<EOF | awk 'sub(/#.*/,"")>=0&&NF>0'
-GET	http://127.0.0.1:8000/
-GET	http://127.0.0.1:8000/aaa
-GET	http://127.0.0.1:8000/bbb
-#GET	https://www.google.co.jp/
+GET	http://127.0.0.1:8000/	NULL
+#GET	http://127.0.0.1:8000/aaa	NULL
+#GET	http://127.0.0.1:8000/bbb	NULL
+POST	http://127.0.0.1:8000/bbb	./tmpl/request1.tmpl
+#GET	https://www.google.co.jp/	NULL
 EOF
 }
 
