@@ -67,14 +67,14 @@ var (
 )
 
 func getTemplate(tmpl string) *template.Template {
-	if t, ok := templates[tmpl]; !ok {
+	t, ok := templates[tmpl]
+	if !ok {
 		//fmt.Printf("NEW==%s==\n", tmpl)
 		//t = template.Must(template.New(path.Base(tmpl)).Funcs(funcMap).ParseFiles(tmpl))
 		t, _ = template.New(path.Base(tmpl)).Funcs(funcMap).ParseFiles(tmpl)
 		templates[tmpl] = t
-		return t
 	}
-	return templates[tmpl]
+	return t
 }
 
 func getPostRequest(url, tmpl string) *http.Request {
