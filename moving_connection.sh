@@ -1,7 +1,7 @@
 #!/bin/sh
 
-#INPUT_LINES=100000
-INPUT_LINES=5
+INPUT_LINES=100000
+#INPUT_LINES=5
 
 log_cat()
 {
@@ -23,7 +23,7 @@ access()
 	done
 }
 
-moving_connection()
+moving_connection_awk()
 {
 	gawk -v T_START=$1 -v T_END=$2 -v UNIT=$3 '
 	function t2u(t){
@@ -93,10 +93,29 @@ moving_connection()
 	}'
 }
 
+START="19/Sep/2016:06:30:00"
+END="19/Sep/2016:06:31:00"
+main_go()
+{
+#Go
+access | ./moving_connection  -start "$START +0900" -end "$END +0900" -unit 1000
+}
+
+main_awk()
+{
+#AWK
+access | moving_connection_awk $START $END 1
+}
+
+time main_go
+time main_awk
+
+exit
+
 if [ $# -ne 3 ];then
 	echo parameter error
 	exit
 fi
 
-access | moving_connection $@
+access | moving_connection_awk $@
 
