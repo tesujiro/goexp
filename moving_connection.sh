@@ -107,6 +107,7 @@ main_awk()
 access | moving_connection_awk $START $END 1
 }
 
+#time access >/dev/null
 time main_go
 time main_awk
 

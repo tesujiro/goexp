@@ -75,11 +75,13 @@ func count(in io.Reader) {
 		result := rep_count.Split(line, -1)
 		trn_start := s2t(fmt.Sprintf("%s %s", result[3][1:], result[4][:5]))
 		//fmt.Printf("trn_start=%v\n", trn_start)
-		f64, err := strconv.ParseFloat(result[len(result)-1], 64)
+		f32, err := strconv.ParseFloat(result[len(result)-1], 32)
+		//f64, err := strconv.ParseFloat(result[len(result)-1], 64)
 		if err != nil {
 			log.Fatalf("strconv.ParseFloat error %s", err)
 		}
-		response := time.Millisecond * time.Duration(f64*1000)
+		response := time.Millisecond * time.Duration(f32*1000)
+		//response := time.Millisecond * time.Duration(f64*1000)
 		trn_end := trn_start.Add(response)
 		//fmt.Printf("response=%v\n", response)
 		for t := start_time; !t.After(end_time); t = t.Add(unit) {
