@@ -22,9 +22,9 @@ type StatspackReport struct {
 }
 
 //format_json := ` `
-const section_separator_string = "                                    -------------------------------------------------------------"
+const SECTION_SEPARATOR = "                                    -------------------------------------------------------------"
 
-func reader(in io.Reader) <-chan string {
+func read(in io.Reader) <-chan string {
 	out := make(chan string)
 	go func() {
 		input := bufio.NewScanner(in)
@@ -40,19 +40,26 @@ func reader(in io.Reader) <-chan string {
 func isEmptyLine(s string) {
 }
 
-var ss_regexp = regexp.MustCompile("[^~]+")
+var ss_regexp = regexp.MustCompile("([^~]+|^$)")
 
 func isSubSectionSeparator(s string) bool {
 	return !ss_regexp.MatchString(s)
+	//return ss_regexp.MatchString(s)
 }
 
-func section_separator(in <-chan string) <-chan KeyValue {
+var tab_regexp = regexp.MustCompile("[^ -]+")
+
+func isTableSeparator(s string) bool {
+	return !tab_regexp.MatchString(s) && s != ""
+}
+
+func separateSection(in <-chan string) <-chan KeyValue {
 	out := make(chan KeyValue)
 	go func() {
 		var kv KeyValue
 		re := regexp.MustCompile("[ \r\f]")
 		for s := range in {
-			if s == section_separator_string {
+			if s == SECTION_SEPARATOR {
 				out <- kv
 				kv = KeyValue{}
 			} else {
@@ -74,11 +81,11 @@ func section_separator(in <-chan string) <-chan KeyValue {
 
 func main() {
 	/*
-		for s := range reader(os.Stdin) {
+		for s := range read(os.Stdin) {
 			fmt.Println(s)
 		}
 	*/
-	for kv := range section_separator(reader(os.Stdin)) {
+	for kv := range separateSection(read(os.Stdin)) {
 		fmt.Println("=====================")
 		fmt.Println(kv.Key)
 		fmt.Println("=====================")
