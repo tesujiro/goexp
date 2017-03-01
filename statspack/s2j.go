@@ -109,7 +109,7 @@ func getColNames(s string, ci [][]int) []string {
 	}
 	//truncate spaces
 	for i, v := range out {
-		out[i] = multispace_regexp.ReplaceAllString(v, " ")
+		out[i] = strings.TrimSpace(multispace_regexp.ReplaceAllString(v, " "))
 	}
 	return out
 }
@@ -129,7 +129,7 @@ func getColValues(line string, ci [][]int, cn []string) []string {
 	}
 	//truncate spaces
 	for i, v := range out {
-		out[i] = multispace_regexp.ReplaceAllString(v, " ")
+		out[i] = strings.TrimSpace(multispace_regexp.ReplaceAllString(v, " "))
 	}
 	return out
 }
@@ -157,23 +157,23 @@ func parseSection(in <-chan KeyValue) {
 					column_indicies = nil
 				} else if isTableSeparator(line) {
 					//fmt.Println("Talble Separator :" + line)
-					fmt.Println("Table Separator:")
+					//fmt.Println("Header Lines:")
+					fmt.Print(header_lines)
+					//fmt.Println("Table Separator:")
 					fmt.Println(line)
-					fmt.Println("Header Lines:")
-					fmt.Println(header_lines)
 					column_indicies = column_regexp.FindAllStringIndex(line, -1)
 					//fmt.Println(column_indicies)
 					colnames = getColNames(header_lines, column_indicies)
-					fmt.Println(colnames)
-					fmt.Println("=====")
+					//fmt.Println(colnames)
+					//fmt.Println("=====")
 				} else {
 					//fmt.Println("else :" + line)
 					if column_indicies == nil {
 						header_lines += line + "\n"
 					} else {
 						values := getColValues(line, column_indicies, colnames)
-						for _, v := range values {
-							fmt.Println(v)
+						for i, v := range values {
+							fmt.Println(colnames[i] + " : " + v)
 						}
 					}
 				}
