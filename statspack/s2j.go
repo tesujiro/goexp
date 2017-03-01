@@ -114,6 +114,26 @@ func getColNames(s string, ci [][]int) []string {
 	return out
 }
 
+func getColValues(line string, ci [][]int, cn []string) []string {
+	var out []string
+	for _, v := range ci {
+		//fmt.Println(line)
+		//fmt.Println(v)
+		var word string
+		if len(line) >= v[1] {
+			word = line[v[0]:v[1]]
+		} else if len(line) >= v[0] {
+			word = line[v[0]:len(line)]
+		}
+		out = append(out, word)
+	}
+	//truncate spaces
+	for i, v := range out {
+		out[i] = multispace_regexp.ReplaceAllString(v, " ")
+	}
+	return out
+}
+
 func parseSection(in <-chan KeyValue) {
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -125,23 +145,37 @@ func parseSection(in <-chan KeyValue) {
 			fmt.Println("=====")
 			scanner := bufio.NewScanner(strings.NewReader(kv.Value))
 			var header_lines string
+			var column_indicies [][]int
+			var colnames []string
 			for scanner.Scan() {
 				//fmt.Println(scanner.Text())
 				line := scanner.Text()
 				//fmt.Println("[" + line + "]")
 				if spaceline_regexp.MatchString(line) {
+					//fmt.Println("set nil :" + line)
 					header_lines = ""
+					column_indicies = nil
 				} else if isTableSeparator(line) {
+					//fmt.Println("Talble Separator :" + line)
 					fmt.Println("Table Separator:")
 					fmt.Println(line)
 					fmt.Println("Header Lines:")
 					fmt.Println(header_lines)
-					ci := column_regexp.FindAllStringIndex(line, -1)
-					//fmt.Println(ci)
-					fmt.Println(getColNames(header_lines, ci))
+					column_indicies = column_regexp.FindAllStringIndex(line, -1)
+					//fmt.Println(column_indicies)
+					colnames = getColNames(header_lines, column_indicies)
+					fmt.Println(colnames)
 					fmt.Println("=====")
 				} else {
-					header_lines += line + "\n"
+					//fmt.Println("else :" + line)
+					if column_indicies == nil {
+						header_lines += line + "\n"
+					} else {
+						values := getColValues(line, column_indicies, colnames)
+						for _, v := range values {
+							fmt.Println(v)
+						}
+					}
 				}
 			}
 		}
