@@ -3,13 +3,10 @@
 list()
 {
 	cat <<EOF
-<<<<<<< HEAD
 abc
 +
 *
 &
-=======
->>>>>>> b60802bdb966fc7331d4bc15f6c947c5581f2d14
 1
 2
 3
@@ -42,11 +39,8 @@ BEGIN{
 	# START CODE/STOP CODE
 	ST="(";SP=")";
 
-<<<<<<< HEAD
 	INPUT_CHAR_REGEXP="[0-9A-Z-]+"
 
-=======
->>>>>>> b60802bdb966fc7331d4bc15f6c947c5581f2d14
 	# SPECIFIED MAX LENGTH 
 	MAX_LENGTH=10
 
@@ -102,14 +96,11 @@ function parity(str){
 	return CD_CODE[digit_num]
 }
 {
-<<<<<<< HEAD
 	if ($0 !~ INPUT_CHAR_REGEXP) {
 		print $0,"=> ERR"
 		next
 	}
 
-=======
->>>>>>> b60802bdb966fc7331d4bc15f6c947c5581f2d14
 	c=convert_alphabet($0)
 	j=justify(c)
 	p=parity(j)
