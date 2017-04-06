@@ -5,7 +5,7 @@ INPUT_LINES=100000
 
 log_cat()
 {
-	cat <<EOF | awk 'sub(/#.*/,"")>=0&&NF'
+	cat <<EOF | gawk 'sub(/#.*/,"")>=0&&NF'
 10.10.10.1 - - [19/Sep/2016:06:29:59.123 +0900] "GET /Detail HTTP/1.1" 200 15110 2.001
 10.10.10.1 - - [19/Sep/2016:06:30:15.123 +0900] "GET /Detail HTTP/1.1" 200 15110 3.001
 10.10.10.1 - - [19/Sep/2016:06:30:24.011 +0900] "GET /Detail HTTP/1.1" 200 15110 0.001
@@ -25,7 +25,7 @@ access()
 
 moving_connection_awk()
 {
-	gawk -v T_START=$1 -v T_END=$2 -v UNIT=$3 '
+	awk -v T_START=$1 -v T_END=$2 -v UNIT=$3 '
 	function t2u(t){
 		YYYY=substr(t,8,4)
 		MM=M2N[substr(t,4,3)]

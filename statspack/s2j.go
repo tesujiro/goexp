@@ -85,13 +85,12 @@ func isTableSeparator(s string) bool {
 }
 
 func getColNames(s string, ci [][]int) []string {
-	//merge each columns
+	//separate each columns
 	var out []string
 	scanner := bufio.NewScanner(strings.NewReader(s))
 	for scanner.Scan() {
 		line := scanner.Text()
 		for i, v := range ci {
-			//fmt.Println(line)
 			//fmt.Println(v)
 			var word string
 			if len(line) >= v[1] {
@@ -116,6 +115,7 @@ func getColNames(s string, ci [][]int) []string {
 
 func getColValues(line string, ci [][]int, cn []string) []string {
 	var out []string
+	fmt.Println(line)
 	for _, v := range ci {
 		//fmt.Println(line)
 		//fmt.Println(v)
