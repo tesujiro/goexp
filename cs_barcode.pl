@@ -6,30 +6,30 @@ use POSIX qw(ceil);
 
 # CONTROL CODE
 use constant {
-		CC1 => "a", CC2 => "b", CC3 => "c", CC4 => "d",
-		CC5 => "e", CC6 => "f", CC7 => "g", CC8 => "h",
-		ST => "(", SP => ")",
+	CC1 => "a", CC2 => "b", CC3 => "c", CC4 => "d",
+	CC5 => "e", CC6 => "f", CC7 => "g", CC8 => "h",
+	ST => "(", SP => ")",
 };
 
 use constant MAX_LENGTH => 10;
 
 # ALPHABET CODE
 my %A_CODE = (
-		A => CC1."0", B => CC1."1", C => CC1."2", D => CC1."3", E => CC1."4",
-		F => CC1."5", G => CC1."6", H => CC1."7", I => CC1."8", J => CC1."9",
-		K => CC2."0", L => CC2."1", M => CC2."2", N => CC2."3", O => CC2."4",
-		P => CC2."5", Q => CC2."6", R => CC2."7", S => CC2."8", T => CC2."9",
-		U => CC3."0", V => CC3."1", W => CC3."2", X => CC3."3", Y => CC3."4",
-		Z => CC3."5",
+	A => CC1."0", B => CC1."1", C => CC1."2", D => CC1."3", E => CC1."4",
+	F => CC1."5", G => CC1."6", H => CC1."7", I => CC1."8", J => CC1."9",
+	K => CC2."0", L => CC2."1", M => CC2."2", N => CC2."3", O => CC2."4",
+	P => CC2."5", Q => CC2."6", R => CC2."7", S => CC2."8", T => CC2."9",
+	U => CC3."0", V => CC3."1", W => CC3."2", X => CC3."3", Y => CC3."4",
+	Z => CC3."5",
 );
 
 # CHARACTER CODE FOR CHECK DIGIT
 my %C_CODE = (
-		"0" => 0, "1" => 1, "2" => 2, "3" => 3, "4" => 4,
-		"5" => 5, "6" => 6, "7" => 7, "8" => 8, "9" => 9,
-		"-" => 10,
-		CC1() => 11, CC2() => 12, CC3() => 13, CC4() => 14,
-		CC5() => 15, CC6() => 16, CC7() => 17, CC8() => 18,
+	"0" => 0, "1" => 1, "2" => 2, "3" => 3, "4" => 4,
+	"5" => 5, "6" => 6, "7" => 7, "8" => 8, "9" => 9,
+	"-" => 10,
+	CC1() => 11, CC2() => 12, CC3() => 13, CC4() => 14,
+	CC5() => 15, CC6() => 16, CC7() => 17, CC8() => 18,
 );
 
 my %CD_CODE = reverse %C_CODE;
@@ -52,7 +52,7 @@ sub csvparse{
 
 sub printcsv{
 	#print map("[$_]",@{$_[0]}),"\n";
-	my @a = @{$_[0]};
+	my @a = shift;
 	print $#a+1,"===>";
 	#for my $v (@{$_[0]}) {
 	for my $v (@a) {
@@ -62,29 +62,25 @@ sub printcsv{
 }
 
 sub justify{
-	my $in=$_[0];
+	my $in=shift;
 	if (length($in) >= MAX_LENGTH){
 		return substr($in,0,MAX_LENGTH);
 	}
 	for (my $i=length($in) ; $i<MAX_LENGTH ; $i++){ $in .= CC4; }
-	return $in
+	return $in;
 }
 
 sub convert_alphabet{
 	my $ret;
-	for my $c (split //,$_[0]){
-		if ($c =~ /[A-Z]/){
-			$ret .= $A_CODE{$c};
-		}else{
-			$ret .= $c;
-		}
+	for my $c (split //,shift){
+		$ret .= $c =~ /[A-Z]/ ? $A_CODE{$c} : $c ;
 	}
 	return $ret;
 }
 
 sub parity{
 	my $sum;
-	for my $c (split //,$_[0]) {$sum += $C_CODE{$c};}
+	for my $c (split //,shift) {$sum += $C_CODE{$c};}
 	return $CD_CODE{ceil($sum/$DIV)*$DIV - $sum};
 }
 
