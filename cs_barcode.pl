@@ -1,5 +1,11 @@
 use strict;
 use POSIX qw(ceil);
+use Encode ;
+
+# 日本語文字化け対策
+use utf8;
+use open IO => qw/:encoding(UTF-8)/;
+binmode STDOUT, ':encoding(UTF-8)';
 
 #&csvparse( sub{ <DATA> } , sub{ print map("[$_]",@{$_[0]}),"\n"; } );
 #&csvparse( sub{ <DATA> } , \&printcsv );
@@ -38,21 +44,34 @@ my $DIV = keys %C_CODE;
 sub csvparse{
     my ($read,$callback)=@_;
     while( defined(my $line=$read->()) ){
+			#$line=decode_utf8($line);
         for(;;){
-            $line =~ s/"([^"]+)"/"\a".unpack('h*',$1)."\a"/ge;
+			#$line =~ s/"([^"]+)"/"\a".unpack('h*',$1)."\a"/ge;
+			#$line =~ s/"([^"]+)"/"\a".decode_utf8($1)."\a"/ge;
+			#$line =~ s/"([^"]+)"/"\a".unpack('H*',$1)."\a"/ge;
+			#$line =~ s/"([^"]+)"/"\a".unpack('H*',encode("utf8",$1))."\a"/ge;
+			$line =~ s/"([^"]*)"/"\a".unpack('H*',encode("utf8",$1))."\a"/ge;
+			#print "マッチした文字列 : $&¥n";
             last unless $line =~ /"/ && defined(my $next = $read->());
+			#$next=decode_utf8($next);
             $line .= $next;
         }
         chomp $line;
+		#$line=encode_utf8($line);
         my @csv = split(/,/,$line);
-        s/\a([^\a]+)\a/pack('h*',$1)/ge foreach( @csv );
+		#s/\a([^\a]+)\a/pack('h*',$1)/ge foreach( @csv );
+		#s/\a([^\a]+)\a/encode_utf8($1)/ge foreach( @csv );
+		#s/\a([^\a]+)\a/pack('H*',$1)/ge foreach( @csv );
+		s/\a([^\a]+)\a/decode("utf8",pack('H*',$1))/ge foreach( @csv );
+		s/\a\a/"/g foreach( @csv );
         $callback->( \@csv );
     }
 }
 
 sub printcsv{
 	#print map("[$_]",@{$_[0]}),"\n";
-	my @a = shift;
+	#my @a = shift;
+	my @a = @{$_[0]};
 	print $#a+1,"===>";
 	#for my $v (@{$_[0]}) {
 	for my $v (@a) {
@@ -85,7 +104,8 @@ sub parity{
 }
 
 sub cs_barcode{
-	my $in=${$_[0]}[0];
+	#my $in=${$_[0]}[0];
+	my $in=${shift()}[0];
 	print "$in";
 	if ($in !~ /^[0-9A-Z-]+$/) {
 		print " => ERROR\n";
@@ -102,8 +122,8 @@ sub cs_barcode{
 	print "\n"; 
 }
 
-#&csvparse( sub{ <DATA> } , \&printcsv );
-&csvparse( sub{ <DATA> } , \&cs_barcode );
+&csvparse( sub{ <DATA> } , \&printcsv );
+#&csvparse( sub{ <DATA> } , \&cs_barcode );
 
 __END__
 nihon,go ahaha,ihihi
@@ -112,6 +132,13 @@ mumumu
 ahaha
 gahaha"
 XXXXX,"YYYYY","DDDDD,XXXXXX"
+AAAAA,"BBBBB","CCC""DDDDDDD",BUG!!
+EEEEE,FFFFFFF,"東京"
+EEEEE,FFFFFFF,"""東京"""
+EEEEE,FFFFFFF," 東 京 "
+EEEEE,FFFFFFF," 大 阪 "
+あああ,いいい,"ううう"
+かかか,ききき,くくく
 abc
 +
 *
