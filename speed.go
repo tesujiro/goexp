@@ -17,9 +17,9 @@ func dprintf(format string, a ...interface{}) {
 	}
 }
 
-var speed *int = flag.Int("bandwidth", 0, "Bytes Per Sec.")
-
 func main() {
+	var speed *int = flag.Int("bandwidth", 0, "Bytes Per Sec.")
+
 	flag.Parse()
 	limitedPipe(os.Stdin, os.Stdout, *speed)
 }
