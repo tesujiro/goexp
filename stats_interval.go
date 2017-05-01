@@ -50,10 +50,10 @@ func (ct *connTable) getLine(line string) {
 
 func (ct *connTable) report(interval float64) {
 	var total_time float64
-	var total_count, start_count, finish_count int
+	var total_count, start_count, finish_count, current_conn int
 
 	now := time.Now()
-	unixNow := float64(now.UnixNano() / 1e9)
+	unixNow := float64(now.UnixNano()) / float64(1e9)
 
 	total_count = len(ct.start)
 	for k, start := range ct.start {
@@ -66,6 +66,7 @@ func (ct *connTable) report(interval float64) {
 			delete(ct.start, k)
 			delete(ct.duration, k)
 		} else { // Not finished yet.
+			current_conn += 1
 			if start > unixNow-interval {
 				total_time += unixNow - start
 			} else {
@@ -74,9 +75,9 @@ func (ct *connTable) report(interval float64) {
 		}
 	}
 
-	fmt.Printf("%s\t%f\t%d\t%d\t%d\n",
+	fmt.Printf("%s\ttotal=%f\tcount=%d\tstart=%d\tfinish=%d\tcurrent=%d\n",
 		now.Format("2006/01/02 15:04:05.000 MST"),
-		total_time, total_count, start_count, finish_count)
+		total_time, total_count, start_count, finish_count, current_conn)
 }
 
 func readLine(in io.Reader, line chan string) {
