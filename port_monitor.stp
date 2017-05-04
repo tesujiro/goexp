@@ -1,0 +1,80 @@
+#!/usr/bin/env stap
+
+global start
+global finish
+global delete_list
+global start_count
+
+probe begin {
+	if (argc!=2) {
+		println("ERROR : argument error")
+		println("argument 1 : PORT NUMBER")
+		println("argument 2 : INTERVAL in millisec.")
+		exit()
+	}
+	#init()
+}
+
+#function init() {
+#
+#}
+
+function sk_string(sk:long)
+{
+	laddr = tcpmib_local_addr(sk);
+	raddr = tcpmib_remote_addr(sk);
+	lport = tcpmib_local_port(sk);
+	rport = tcpmib_remote_port(sk);
+	AF_INET = 2;
+	return sprintf("%s:%d\t->%s:%d",
+		format_ipaddr(raddr,AF_INET),rport,format_ipaddr(laddr,AF_INET),lport)
+}
+
+probe kernel.function("tcp_set_state") {
+	if( tcpmib_local_port($sk) != $1 ){
+		#printf ("NOT HTTP %s \n",sk_string($sk))
+		next
+	}
+	sk=sk_string($sk)
+	#sk_string=sprintf("%d",sk)
+	state=$state	
+
+	if ( state == 1 ){  #TCP_ESTABLISHED=1
+		start[sk]=gettimeofday_us()
+		start_count++
+		#printf("Connection Start !! %s\n",sk_string(sk))
+	} else { if ( start[sk] != 0 ){
+		finish[sk]=gettimeofday_us()-start[sk]
+		delete start[sk]
+		#printf("Connection Finish !! %s duration=%dus\n",sk,finish[sk])
+	} }
+
+}
+
+# Report every 1 second
+probe timer.ms($2 ) { report () }
+
+function report() {
+	foreach ([sk] in start) {
+		count++
+		current_count++
+		total+=gettimeofday_us()-start[sk]
+		#printf("[%s] sk=%d start=%d\n",tz_ctime(gettimeofday_s()),sk,start[sk])
+	}
+	foreach ([sk] in finish) {
+		count++
+		finish_count++
+		total+=finish[sk]
+		delete_list[di++]=sk
+	}
+
+	if (count>0) { avg=total/count }
+	printf("[%s] total=%dus count=%d avg=%dus start=%d finish=%d current=%d\n",
+		tz_ctime(gettimeofday_s()),total,count,avg,start_count,finish_count,current_count)
+	start_count=0
+	for(i=0;i<di;i++){
+		delete finish[delete_list[i]]
+	}
+	#delete finish //Todo' not safe because during the counting loop finish can add elements
+}
+
