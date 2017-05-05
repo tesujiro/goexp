@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -11,7 +12,7 @@ import (
 	"time"
 )
 
-const interval float64 = 1 // 5 sec.
+//const interval float64 = 1 // 5 sec.
 //const interval float64 = 5 // 5 sec.
 
 type connTable struct {
@@ -85,11 +86,14 @@ func readLine(in io.Reader, line chan string) {
 }
 
 func main() {
+	var interval *float64 = flag.Float64("interval", 1, "Report Interval")
+	flag.Parse()
+	//fmt.Printf("interval=%f\n", *interval)
+
 	line := make(chan string, 1)
 	go readLine(os.Stdin, line)
 
-	tick := time.NewTicker(time.Second * time.Duration(interval)).C //ToDo:support arg
-
+	tick := time.NewTicker(time.Second * time.Duration(*interval)).C
 	ct := newConnTable()
 
 	for {
