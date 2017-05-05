@@ -6,14 +6,13 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/signal"
 	"regexp"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 )
-
-//const interval float64 = 1 // 5 sec.
-//const interval float64 = 5 // 5 sec.
 
 type connTable struct {
 	start         map[string]float64
@@ -88,14 +87,16 @@ func readLine(in io.Reader, line chan string) {
 func main() {
 	var interval *float64 = flag.Float64("interval", 1, "Report Interval")
 	flag.Parse()
-	//fmt.Printf("interval=%f\n", *interval)
+	fmt.Printf("Start monitoring interval=%f .\n", *interval)
 
 	line := make(chan string, 1)
 	go readLine(os.Stdin, line)
 
 	tick := time.NewTicker(time.Second * time.Duration(*interval)).C
-	ct := newConnTable()
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
+	ct := newConnTable()
 	for {
 		select {
 		case l := <-line:
@@ -104,6 +105,9 @@ func main() {
 		case <-tick:
 			ct.report()
 			//fmt.Printf("[%s] Time has come!!\n", time.Now().Format("2006/01/02 15:04:05.000 MST"))
+		case <-sigs:
+			fmt.Println("Quit Monitoring.")
+			os.Exit(0)
 		}
 	}
 }
