@@ -17,16 +17,29 @@ func dprintf(format string, a ...interface{}) {
 	}
 }
 
+func getTty() *os.File {
+	device := "/dev/tty"
+	tty, err := os.Create(device)
+	if err != nil {
+		// Openエラー処理
+		fmt.Printf("File Open Error device:%s error:%v\n", device, err)
+	}
+	return tty
+}
+
 func main() {
 	var speed *int = flag.Int("bandwidth", 0, "Bytes Per Sec.")
-
 	flag.Parse()
-	limitedPipe(os.Stdin, os.Stdout, *speed)
+
+	tty := getTty()
+	defer tty.Close()
+
+	limitedPipe(os.Stdin, os.Stdout, tty, *speed)
 }
 
 const BUFSIZE = 4096
 
-func limitedPipe(in io.Reader, out io.Writer, speed int) {
+func limitedPipe(in io.Reader, out io.Writer, tty io.Writer, speed int) {
 	sk := NewSpeedKeeper(time.Now(), speed)
 	reader := bufio.NewReader(in)
 	buf := make([]byte, BUFSIZE)
@@ -46,7 +59,7 @@ func limitedPipe(in io.Reader, out io.Writer, speed int) {
 			sk.killTime(readBytes)
 		}
 		//dprintf("\r[%s] %d Bytes\t@%2d KBps\n",
-		fmt.Fprintf(os.Stderr, "\r[%s] %d Bytes\t@%2d KBps",
+		fmt.Fprintf(tty, "\r[%s] %d Bytes\t@%d KBps",
 			time.Now().Format("2006/01/02 15:04:05.000 MST"),
 			readBytes,
 			sk.currentSpeed(readBytes)/1024)
