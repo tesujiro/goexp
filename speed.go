@@ -48,8 +48,7 @@ func read(in io.Reader, rb chan readbuf) {
 	reader := bufio.NewReader(in)
 	buf := make([]byte, BUFSIZE)
 	for {
-		n, err := reader.Read(buf)
-		if n == 0 || err == io.EOF {
+		if n, err := reader.Read(buf); n == 0 || err == io.EOF {
 			break
 		} else if err != nil {
 			fmt.Fprintf(os.Stderr, "\n\nFile Read Error :%v\n", err)
