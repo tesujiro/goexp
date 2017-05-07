@@ -67,6 +67,8 @@ func limitedPipe(in io.Reader, out io.Writer, tty io.Writer, speed int) {
 		done <- struct{}{}
 	}()
 
+	tick := time.NewTicker(time.Millisecond * time.Duration(200)).C
+
 	sk := NewSpeedKeeper(time.Now(), speed)
 	readBytes := 0
 L:
@@ -76,6 +78,7 @@ L:
 			readBytes += rb.length
 			out.Write(rb.buf)
 			sk.killTime(readBytes)
+		case <-tick:
 			fmt.Fprintf(tty, "\r\033[K[%s] %dBytes\t@ %dKBps",
 				time.Now().Format("2006/01/02 15:04:05.000 MST"),
 				readBytes,
