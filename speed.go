@@ -39,32 +39,53 @@ func main() {
 
 const BUFSIZE = 4096
 
-func limitedPipe(in io.Reader, out io.Writer, tty io.Writer, speed int) {
-	sk := NewSpeedKeeper(time.Now(), speed)
+type readbuf struct {
+	length int
+	buf    []byte
+}
+
+func read(in io.Reader, rb chan readbuf) {
 	reader := bufio.NewReader(in)
 	buf := make([]byte, BUFSIZE)
-	readBytes := 0
 	for {
 		n, err := reader.Read(buf)
-		//fmt.Fprintf(os.Stderr, "buffer len :%d\n", n)
-		if n == 0 {
+		if n == 0 || err == io.EOF {
 			break
+		} else if err != nil {
+			fmt.Fprintf(os.Stderr, "\n\nFile Read Error :%v\n", err)
+			os.Exit(9)
+		} else {
+			rb <- readbuf{length: n, buf: buf}
 		}
-		if err != nil {
-			break
-		}
-		out.Write(buf)
-		readBytes += n
-		if speed > 0 {
-			sk.killTime(readBytes)
-		}
-		//dprintf("\r[%s] %d Bytes\t@%2d KBps\n",
-		fmt.Fprintf(tty, "\r[%s] %d Bytes\t@%d KBps",
-			time.Now().Format("2006/01/02 15:04:05.000 MST"),
-			readBytes,
-			sk.currentSpeed(readBytes)/1024)
 	}
-	fmt.Fprintf(os.Stderr, "\n")
+}
+
+func limitedPipe(in io.Reader, out io.Writer, tty io.Writer, speed int) {
+	rbchan := make(chan readbuf, 1)
+	done := make(chan struct{}, 1)
+	go func() {
+		read(in, rbchan)
+		done <- struct{}{}
+	}()
+
+	sk := NewSpeedKeeper(time.Now(), speed)
+	readBytes := 0
+L:
+	for {
+		select {
+		case rb := <-rbchan:
+			readBytes += rb.length
+			out.Write(rb.buf)
+			sk.killTime(readBytes)
+			fmt.Fprintf(tty, "\r\033[K[%s] %dBytes\t@ %dKBps",
+				time.Now().Format("2006/01/02 15:04:05.000 MST"),
+				readBytes,
+				sk.currentSpeed(readBytes)/1024)
+		case <-done:
+			fmt.Fprintf(tty, "\n")
+			break L
+		}
+	}
 }
 
 type speedKeeper struct {
@@ -80,6 +101,9 @@ func NewSpeedKeeper(s time.Time, b int) *speedKeeper {
 }
 
 func (sk *speedKeeper) killTime(curBytes int) {
+	if sk.bytePerSec <= 0 {
+		return
+	}
 	//target_duration := time.Duration(float64(curBytes/sk.bytePerSec)) * time.Second //NG
 	target_duration := time.Duration(float64(curBytes*1000/sk.bytePerSec)) * time.Millisecond
 	//target_duration := time.Duration(float64(curBytes*1e9/sk.bytePerSec)) * time.Nanosecond
