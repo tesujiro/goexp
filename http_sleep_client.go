@@ -17,6 +17,8 @@ func main() {
 	loop := flag.Int("loop", 0, "loop")
 	min := flag.Int("min", 0, "min msec sleep")
 	max := flag.Int("max", 100, "max msec sleep")
+	keepalive := flag.Bool("keepalive", false, "keep alive Tcp connections")
+	debug := flag.Bool("debug", false, "debug")
 	flag.Parse()
 
 	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = 50
@@ -24,11 +26,13 @@ func main() {
 	//client := &http.Client{Timeout: time.Duration(10 * time.Second)}
 	wg := &sync.WaitGroup{}
 	t := &tester{
-		client:  http.DefaultClient,
-		REQ_URL: *REQ_URL,
-		loop:    *loop,
-		min:     *min,
-		max:     *max,
+		client:    http.DefaultClient,
+		REQ_URL:   *REQ_URL,
+		loop:      *loop,
+		min:       *min,
+		max:       *max,
+		keepalive: *keepalive,
+		debug:     *debug,
 	}
 	for i := 0; i < *thread; i++ {
 		wg.Add(1)
@@ -41,11 +45,13 @@ func main() {
 }
 
 type tester struct {
-	client  *http.Client
-	REQ_URL string
-	loop    int
-	min     int
-	max     int
+	client    *http.Client
+	REQ_URL   string
+	loop      int
+	min       int
+	max       int
+	keepalive bool
+	debug     bool
 }
 
 func (t *tester) do() {
@@ -61,8 +67,8 @@ func (t *tester) do() {
 }
 
 func (t *tester) get() {
-	values := url.Values{}                                          // url.Valuesオブジェクト生成
-	values.Add("timer", strconv.Itoa(t.min+rand.Intn(t.max-t.min))) // key-valueを追加
+	values := url.Values{}
+	values.Add("timer", strconv.Itoa(t.min+rand.Intn(t.max-t.min)))
 	//fmt.Println(values.Encode())
 
 	req, err := http.NewRequest("GET", t.REQ_URL+"/", nil)
@@ -80,19 +86,19 @@ func (t *tester) get() {
 	}
 	defer resp.Body.Close()
 
-	//	dump(resp)
-	//fmt.Println("Finished!!")
+	if t.keepalive || t.debug {
+		t.dump(resp)
+		//fmt.Println("Finished!!")
+	}
 }
 
-func dump(resp *http.Response) {
-	// response bodyを文字列で取得するサンプル
-	// ioutil.ReadAllを使う
-	_, err := ioutil.ReadAll(resp.Body)
+func (t *tester) dump(resp *http.Response) {
+	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
-	//b, err := ioutil.ReadAll(resp.Body)
-	//if err == nil {
-	//fmt.Println(string(b))
-	//}
+	if t.debug {
+		fmt.Print(string(b))
+	}
 }

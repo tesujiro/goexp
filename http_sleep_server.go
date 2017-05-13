@@ -15,7 +15,7 @@ func Sleeper(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	i, _ := strconv.Atoi(q.Get("timer"))
 	time.Sleep(time.Duration(i) * time.Millisecond)
-	fmt.Fprintf(w, "Hello, World :slept %s msec\n", i)
+	fmt.Fprintf(w, "Hello, World :slept %d msec\n", i)
 }
 
 func main() {
