@@ -62,14 +62,8 @@ func config() (error, int, *tester) {
 }
 
 func (t *tester) run() {
-	if t.loop > 0 {
-		for i := 0; i < t.loop; i++ {
-			t.get()
-		}
-	} else {
-		for {
-			t.get()
-		}
+	for i := 0; t.loop <= 0 || i < t.loop; i++ {
+		t.get()
 	}
 }
 
