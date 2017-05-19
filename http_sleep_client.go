@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -12,12 +13,11 @@ import (
 )
 
 func main() {
-
-	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = 50
-	http.DefaultClient.Timeout = 0
-	//client := &http.Client{Timeout: time.Duration(10 * time.Second)}
-
-	thread, tester := config()
+	err, thread, tester := config()
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
 	wg := &sync.WaitGroup{}
 	for i := 0; i < thread; i++ {
 		wg.Add(1)
@@ -31,7 +31,7 @@ func main() {
 
 type tester struct {
 	client    *http.Client
-	REQ_URL   string
+	url       string
 	loop      int
 	min       int
 	max       int
@@ -39,19 +39,26 @@ type tester struct {
 	debug     bool
 }
 
-func config() (int, *tester) {
-	thread := flag.Int("thread", 10, "threads")
+func config() (error, int, *tester) {
+	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = 50
+	http.DefaultClient.Timeout = 0
+	//client := &http.Client{Timeout: time.Duration(10 * time.Second)}
 	t := tester{
-		client:    http.DefaultClient,
-		REQ_URL:   *flag.String("url", "http://127.0.0.1:10182", "request url"),
-		loop:      *flag.Int("loop", 0, "loop"),
-		min:       *flag.Int("min", 0, "min msec sleep"),
-		max:       *flag.Int("max", 100, "max msec sleep"),
-		keepalive: *flag.Bool("keepalive", false, "keep alive Tcp connections"),
-		debug:     *flag.Bool("debug", false, "debug"),
+		client: http.DefaultClient,
 	}
+	thread := flag.Int("thread", 10, "threads")
+	flag.StringVar(&t.url, "url", "http://127.0.0.1:80", "request url")
+	flag.IntVar(&t.loop, "loop", 0, "loop")
+	flag.IntVar(&t.min, "min", 0, "min msec sleep")
+	flag.IntVar(&t.max, "max", 100, "max msec sleep")
+	flag.BoolVar(&t.keepalive, "keepalive", false, "keep alive Tcp connections")
+	flag.BoolVar(&t.debug, "debug", false, "debug")
 	flag.Parse()
-	return *thread, &t
+	if t.min > t.max {
+		err := fmt.Errorf("Error: min > max")
+		return err, 0, nil
+	}
+	return nil, *thread, &t
 }
 
 func (t *tester) run() {
@@ -68,10 +75,13 @@ func (t *tester) run() {
 
 func (t *tester) get() {
 	values := url.Values{}
-	values.Add("timer", strconv.Itoa(t.min+rand.Intn(t.max-t.min)))
-	//fmt.Println(values.Encode())
+	if t.min == t.max {
+		values.Add("timer", strconv.Itoa(t.min))
+	} else {
+		values.Add("timer", strconv.Itoa(t.min+rand.Intn(t.max-t.min)))
+	}
 
-	req, err := http.NewRequest("GET", t.REQ_URL+"/", nil)
+	req, err := http.NewRequest("GET", t.url+"/", nil)
 	if err != nil {
 		fmt.Println(err)
 		return
