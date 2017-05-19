@@ -12,32 +12,17 @@ import (
 )
 
 func main() {
-	REQ_URL := flag.String("url", "http://127.0.0.1:10182", "request url")
-	thread := flag.Int("thread", 10, "threads")
-	loop := flag.Int("loop", 0, "loop")
-	min := flag.Int("min", 0, "min msec sleep")
-	max := flag.Int("max", 100, "max msec sleep")
-	keepalive := flag.Bool("keepalive", false, "keep alive Tcp connections")
-	debug := flag.Bool("debug", false, "debug")
-	flag.Parse()
 
 	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = 50
 	http.DefaultClient.Timeout = 0
 	//client := &http.Client{Timeout: time.Duration(10 * time.Second)}
+
+	thread, tester := config()
 	wg := &sync.WaitGroup{}
-	t := &tester{
-		client:    http.DefaultClient,
-		REQ_URL:   *REQ_URL,
-		loop:      *loop,
-		min:       *min,
-		max:       *max,
-		keepalive: *keepalive,
-		debug:     *debug,
-	}
-	for i := 0; i < *thread; i++ {
+	for i := 0; i < thread; i++ {
 		wg.Add(1)
 		go func() {
-			t.do()
+			tester.run()
 			wg.Done()
 		}()
 	}
@@ -54,7 +39,22 @@ type tester struct {
 	debug     bool
 }
 
-func (t *tester) do() {
+func config() (int, *tester) {
+	thread := flag.Int("thread", 10, "threads")
+	t := tester{
+		client:    http.DefaultClient,
+		REQ_URL:   *flag.String("url", "http://127.0.0.1:10182", "request url"),
+		loop:      *flag.Int("loop", 0, "loop"),
+		min:       *flag.Int("min", 0, "min msec sleep"),
+		max:       *flag.Int("max", 100, "max msec sleep"),
+		keepalive: *flag.Bool("keepalive", false, "keep alive Tcp connections"),
+		debug:     *flag.Bool("debug", false, "debug"),
+	}
+	flag.Parse()
+	return *thread, &t
+}
+
+func (t *tester) run() {
 	if t.loop > 0 {
 		for i := 0; i < t.loop; i++ {
 			t.get()
