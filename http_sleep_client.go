@@ -105,7 +105,7 @@ func config() (error, int, *tester) {
 
 func (t *tester) run(ctx context.Context, got chan<- struct{}) {
 	for i := 0; t.loop <= 0 || i < t.loop; i++ {
-		if err := t.get(); err == nil {
+		if err := t.get(ctx); err == nil {
 			got <- struct{}{}
 		} else {
 			log.Println(err)
@@ -113,7 +113,7 @@ func (t *tester) run(ctx context.Context, got chan<- struct{}) {
 	}
 }
 
-func (t *tester) get() error {
+func (t *tester) get(ctx context.Context) error {
 	// set Query parameter "timer=n"
 	values := url.Values{}
 	if t.min == t.max {
@@ -128,6 +128,7 @@ func (t *tester) get() error {
 	}
 	req.URL.RawQuery = values.Encode()
 
+	req.WithContext(ctx)
 	resp, err := t.client.Do(req)
 	if err != nil {
 		return err
