@@ -23,8 +23,8 @@ func main() {
 		log.Fatal(err)
 		return
 	}
-	ctx := context.Background()
 	var cancel, timeoutCancel context.CancelFunc
+	ctx := context.Background()
 	ctx, cancel = context.WithCancel(ctx)
 	if conf.timeout > 0 {
 		ctx, timeoutCancel = context.WithTimeout(ctx, time.Second*time.Duration(conf.timeout))
@@ -32,7 +32,7 @@ func main() {
 	}
 	wg := &sync.WaitGroup{}
 
-	// tester goroutin start
+	// tester goroutine start
 	got := make(chan struct{}, conf.threads)
 	for i := 0; i < conf.threads; i++ {
 		wg.Add(1)
@@ -55,10 +55,12 @@ func main() {
 		tick = time.NewTicker(time.Second * time.Duration(conf.tick)).C
 	}
 
-	// select all the events
-	var counter int
+	// signal
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+
+	// select all the events
+	var counter int
 L:
 	for {
 		select {
@@ -109,9 +111,9 @@ func config() (error, *conf) {
 	tick := flag.Int("tick", 0, "tick in seconds")
 	timeout := flag.Int("timeout", 0, "timeout in seconds")
 	flag.StringVar(&t.url, "url", "http://127.0.0.1:80", "request url")
-	flag.IntVar(&t.loop, "loop", 0, "loop")
-	flag.IntVar(&t.min, "min", 0, "min msec sleep")
-	flag.IntVar(&t.max, "max", 100, "max msec sleep")
+	flag.IntVar(&t.loop, "loop", 0, "loop limit")
+	flag.IntVar(&t.min, "min", 0, "min sleep timer in msec")
+	flag.IntVar(&t.max, "max", 100, "max sleep timer in msec")
 	flag.BoolVar(&t.keepalive, "keepalive", false, "keep alive Tcp connections")
 	flag.BoolVar(&t.debug, "debug", false, "debug")
 	flag.Parse()
