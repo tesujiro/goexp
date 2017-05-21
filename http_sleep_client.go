@@ -107,9 +107,12 @@ func config() (error, *conf) {
 	t := tester{
 		client: http.DefaultClient,
 	}
-	threads := flag.Int("thread", 10, "threads")
-	tick := flag.Int("tick", 0, "tick in seconds")
-	timeout := flag.Int("timeout", 0, "timeout in seconds")
+	c := conf{
+		tester: &t,
+	}
+	flag.IntVar(&c.threads, "thread", 10, "threads")
+	flag.IntVar(&c.tick, "tick", 0, "tick in seconds")
+	flag.IntVar(&c.timeout, "timeout", 0, "timeout in seconds")
 	flag.StringVar(&t.url, "url", "http://127.0.0.1:80", "request url")
 	flag.IntVar(&t.loop, "loop", 0, "loop limit")
 	flag.IntVar(&t.min, "min", 0, "min sleep timer in msec")
@@ -119,17 +122,12 @@ func config() (error, *conf) {
 	flag.Parse()
 	if t.min > t.max {
 		err := fmt.Errorf("Error: min > max")
-		return err, &conf{}
-	} else if *threads < 0 || *tick < 0 || *timeout < 0 || t.min < 0 || t.max < 0 || t.loop < 0 {
+		return err, &c
+	} else if c.threads < 0 || c.tick < 0 || c.timeout < 0 || t.min < 0 || t.max < 0 || t.loop < 0 {
 		err := fmt.Errorf("Error: negative number")
-		return err, &conf{}
+		return err, &c
 	}
-	return nil, &conf{
-		threads: *threads,
-		tick:    *tick,
-		timeout: *timeout,
-		tester:  &t,
-	}
+	return nil, &c
 }
 
 func (t *tester) run(ctx context.Context, got chan<- struct{}) {
