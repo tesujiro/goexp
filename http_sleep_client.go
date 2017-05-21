@@ -24,9 +24,12 @@ func main() {
 		return
 	}
 	ctx := context.Background()
-	ctx, cancel := context.WithCancel(ctx)
-	//ctx, timeout := context.WithTimeout(ctx, 3*time.Second)
-	//defer timeout()
+	var cancel, timeoutCancel context.CancelFunc
+	ctx, cancel = context.WithCancel(ctx)
+	if conf.timeout > 0 {
+		ctx, timeoutCancel = context.WithTimeout(ctx, time.Second*time.Duration(conf.timeout))
+		defer timeoutCancel()
+	}
 	wg := &sync.WaitGroup{}
 
 	// tester goroutin start
@@ -81,6 +84,7 @@ L:
 type conf struct {
 	threads int
 	tick    int
+	timeout int
 	tester  *tester
 }
 
@@ -103,6 +107,7 @@ func config() (error, *conf) {
 	}
 	threads := flag.Int("thread", 10, "threads")
 	tick := flag.Int("tick", 0, "tick in seconds")
+	timeout := flag.Int("timeout", 0, "timeout in seconds")
 	flag.StringVar(&t.url, "url", "http://127.0.0.1:80", "request url")
 	flag.IntVar(&t.loop, "loop", 0, "loop")
 	flag.IntVar(&t.min, "min", 0, "min msec sleep")
@@ -113,13 +118,14 @@ func config() (error, *conf) {
 	if t.min > t.max {
 		err := fmt.Errorf("Error: min > max")
 		return err, &conf{}
-	} else if *threads < 0 || t.min < 0 || t.max < 0 || t.loop < 0 {
+	} else if *threads < 0 || *tick < 0 || *timeout < 0 || t.min < 0 || t.max < 0 || t.loop < 0 {
 		err := fmt.Errorf("Error: negative number")
 		return err, &conf{}
 	}
 	return nil, &conf{
 		threads: *threads,
 		tick:    *tick,
+		timeout: *timeout,
 		tester:  &t,
 	}
 }
