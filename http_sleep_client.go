@@ -14,10 +14,11 @@ import (
 	"strconv"
 	"sync"
 	"syscall"
+	"time"
 )
 
 func main() {
-	err, threads, tester := config()
+	err, conf := config()
 	if err != nil {
 		log.Fatal(err)
 		return
@@ -29,11 +30,11 @@ func main() {
 	wg := &sync.WaitGroup{}
 
 	// tester goroutin start
-	got := make(chan struct{}, threads)
-	for i := 0; i < threads; i++ {
+	got := make(chan struct{}, conf.threads)
+	for i := 0; i < conf.threads; i++ {
 		wg.Add(1)
 		go func() {
-			tester.run(ctx, got)
+			conf.tester.run(ctx, got)
 			wg.Done()
 		}()
 	}
@@ -45,6 +46,12 @@ func main() {
 		done <- true
 	}()
 
+	// tick
+	var tick <-chan time.Time
+	if conf.tick > 0 {
+		tick = time.NewTicker(time.Second * time.Duration(conf.tick)).C
+	}
+
 	// select all the events
 	var counter int
 	sig := make(chan os.Signal, 1)
@@ -54,18 +61,27 @@ L:
 		select {
 		case <-got:
 			counter += 1
+		case <-tick:
+			log.Printf("tick. current %d Requests returned OK.\n", counter)
 		case <-done:
+			//log.Printf("Waitgroup done:\n")
 			break L
 		case <-ctx.Done():
-			//fmt.Printf("Context done:\n")
+			//log.Printf("Context done:\n")
 			break L
 		case s := <-sig:
-			fmt.Printf("Got signal:%d\n", s)
+			log.Printf("Got signal:%d\n", s)
 			cancel()
 		}
 	}
-	fmt.Printf("%d Requests returned OK.\n", counter)
+	log.Printf("Finished. %d Requests returned OK.\n", counter)
 
+}
+
+type conf struct {
+	threads int
+	tick    int
+	tester  *tester
 }
 
 type tester struct {
@@ -78,7 +94,7 @@ type tester struct {
 	debug     bool
 }
 
-func config() (error, int, *tester) {
+func config() (error, *conf) {
 	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = 50
 	http.DefaultClient.Timeout = 0
 	//client := &http.Client{Timeout: time.Duration(10 * time.Second)}
@@ -86,6 +102,7 @@ func config() (error, int, *tester) {
 		client: http.DefaultClient,
 	}
 	threads := flag.Int("thread", 10, "threads")
+	tick := flag.Int("tick", 0, "tick in seconds")
 	flag.StringVar(&t.url, "url", "http://127.0.0.1:80", "request url")
 	flag.IntVar(&t.loop, "loop", 0, "loop")
 	flag.IntVar(&t.min, "min", 0, "min msec sleep")
@@ -95,12 +112,16 @@ func config() (error, int, *tester) {
 	flag.Parse()
 	if t.min > t.max {
 		err := fmt.Errorf("Error: min > max")
-		return err, 0, nil
+		return err, &conf{}
 	} else if *threads < 0 || t.min < 0 || t.max < 0 || t.loop < 0 {
 		err := fmt.Errorf("Error: negative number")
-		return err, 0, nil
+		return err, &conf{}
 	}
-	return nil, *threads, &t
+	return nil, &conf{
+		threads: *threads,
+		tick:    *tick,
+		tester:  &t,
+	}
 }
 
 func (t *tester) run(ctx context.Context, got chan<- struct{}) {
