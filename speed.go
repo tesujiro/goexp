@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"flag"
 	"fmt"
 	"io"
@@ -28,13 +29,18 @@ func getTty() *os.File {
 }
 
 func main() {
+	ctx := context.Background()
+	var cancel context.CancelFunc
+	ctx, cancel = context.WithCancel(ctx)
+	defer cancel()
+
 	var speed *int = flag.Int("bandwidth", 0, "Bytes Per Sec.")
 	flag.Parse()
 
 	tty := getTty()
 	defer tty.Close()
 
-	limitedPipe(os.Stdin, os.Stdout, tty, *speed)
+	limitedPipe(ctx, os.Stdin, os.Stdout, tty, *speed)
 }
 
 const BUFSIZE = 4096
@@ -59,7 +65,7 @@ func read(in io.Reader, rb chan readbuf) {
 	}
 }
 
-func limitedPipe(in io.Reader, out io.Writer, tty io.Writer, speed int) {
+func limitedPipe(ctx context.Context, in io.Reader, out io.Writer, tty io.Writer, speed int) {
 	rbchan := make(chan readbuf, 1)
 	done := make(chan struct{}, 1)
 	go func() {
