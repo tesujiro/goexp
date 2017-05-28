@@ -81,7 +81,8 @@ L:
 			out.Write(rb.buf)
 			sk.killTime(readBytes)
 		case <-tick:
-			mon.msg <- fmt.Sprintf("\r\033[K[%s] %dBytes\t@ %dKBps",
+			//mon.msg <- fmt.Sprintf("\r\033[K[%s] %dBytes\t@ %dKBps",
+			mon.msg <- fmt.Sprintf("[%s] %dBytes\t@ %dKBps",
 				time.Now().Format("2006/01/02 15:04:05.000 MST"),
 				readBytes,
 				sk.currentSpeed(readBytes)/1024)
@@ -153,17 +154,17 @@ func getTty() *os.File {
 }
 
 func newMonitor(ctx context.Context, cancel func()) *monitor {
-	tty := getTty()
 	return &monitor{
 		ctx:    ctx,
 		cancel: cancel,
-		tty:    tty,
+		tty:    getTty(),
 		msg:    make(chan string),
 	}
 }
 
 func (mon *monitor) print(s string) {
-	fmt.Fprint(mon.tty, s)
+	//mon.msg <- fmt.Sprintf("\r\033[K[%s] %dBytes\t@ %dKBps",
+	fmt.Fprintf(mon.tty, "\r\033[K%s", s)
 }
 
 func (mon *monitor) run() {
