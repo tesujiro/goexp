@@ -85,25 +85,30 @@ func limitedPipe(ctx context.Context, in io.Reader, out io.Writer, speed int, si
 	ctx, cancel = context.WithCancel(ctx)
 
 	rbchan := make(chan readbuf, 1)
-	done := make(chan struct{}, 1)
+	done_reading := make(chan struct{}, 1)
 	go func() {
 		read(in, rbchan)
-		done <- struct{}{}
+		done_reading <- struct{}{}
 	}()
 
 	wg := &sync.WaitGroup{}
-	wg.Add(1)
 
-	sk := NewSpeedKeeper(time.Now(), speed, size)
+	//sk := NewSpeedKeeper(time.Now(), speed, size)
+	sk := NewSpeedKeeper(ctx, cancel, time.Now(), speed, size)
+	wg.Add(1)
+	go func() {
+		sk.run()
+		wg.Done()
+	}()
 
 	mon := newMonitor(ctx, cancel, sk)
+	wg.Add(1)
 	go func() {
 		mon.run()
 		wg.Done()
 	}()
 
 	tick := time.NewTicker(time.Millisecond * time.Duration(50)).C
-
 	readBytes := 0
 L:
 	for {
@@ -111,10 +116,12 @@ L:
 		case rb := <-rbchan:
 			readBytes += rb.length
 			out.Write(rb.buf)
-			sk.killTime(readBytes)
+			//sk.killTime(readBytes)
+			sk.curchan <- readBytes
+			<-sk.killTime()
 		case <-tick:
 			mon.progress <- struct{}{}
-		case <-done:
+		case <-done_reading:
 			mon.progress <- struct{}{}
 			cancel()
 			break L
@@ -127,39 +134,65 @@ L:
 }
 
 //
-// The speedKeeper is a goroutine which keeps input/output speed. --> not a goroutine
+// The speedKeeper is a goroutine which keeps input/output speed.
 //
 
 type speedKeeper struct {
+	ctx        context.Context
+	cancel     func()
 	start      time.Time
 	bytePerSec int
 	size       int
 	current    int
+	curchan    chan int
+	outchan    chan struct{}
 }
 
-func NewSpeedKeeper(s time.Time, b int, size int) *speedKeeper {
+func NewSpeedKeeper(ctx context.Context, cancel func(), s time.Time, b int, size int) *speedKeeper {
 	return &speedKeeper{
+		ctx:        ctx,
+		cancel:     cancel,
 		start:      s,
 		bytePerSec: b,
 		size:       size,
+		current:    0,
+		curchan:    make(chan int),
 	}
 }
 
-func (sk *speedKeeper) killTime(curBytes int) {
-	sk.current = curBytes
-	if sk.bytePerSec <= 0 {
-		return
+func (sk *speedKeeper) run() {
+L:
+	for {
+		select {
+		case curBytes := <-sk.curchan:
+			sk.current = curBytes
+		case <-sk.ctx.Done():
+			break L
+		}
 	}
-	//target_duration := time.Duration(float64(curBytes/sk.bytePerSec)) * time.Second //NG
-	target_duration := time.Duration(float64(curBytes*1000/sk.bytePerSec)) * time.Millisecond
-	//target_duration := time.Duration(float64(curBytes*1e9/sk.bytePerSec)) * time.Nanosecond
-	current_duration := time.Since(sk.start)
-	wait := target_duration - current_duration
-	dprintf(" target=%s current=%s\n", target_duration, current_duration)
-	if wait > 0 {
-		dprintf("Sleep %s\n", wait)
-		time.Sleep(wait)
-	}
+}
+
+func (sk *speedKeeper) killTime() <-chan struct{} {
+	outchan := make(chan struct{})
+	go func() {
+		//sk.current = curBytes
+		if sk.bytePerSec > 0 {
+			//target_duration := time.Duration(float64(curBytes/sk.bytePerSec)) * time.Second //NG
+			//target_duration := time.Duration(float64(curBytes*1e9/sk.bytePerSec)) * time.Nanosecond
+			//target_duration := time.Duration(float64(curBytes*1000/sk.bytePerSec)) * time.Millisecond
+			target_duration := time.Duration(float64(sk.current*1000/sk.bytePerSec)) * time.Millisecond
+			current_duration := time.Since(sk.start)
+			wait := target_duration - current_duration
+			dprintf(" target=%s current=%s\n", target_duration, current_duration)
+			if wait > 0 {
+				dprintf("Sleep %s\n", wait)
+				time.Sleep(wait)
+			}
+			dprintf(" wait finished %d\n", wait)
+		}
+		outchan <- struct{}{}
+	}()
+	return outchan
 }
 
 func (sk *speedKeeper) currentSpeed() int {
