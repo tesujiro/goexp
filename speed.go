@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 )
@@ -25,7 +26,36 @@ func main() {
 	var speed *int = flag.Int("bandwidth", 0, "Bytes Per Sec.")
 	flag.Parse()
 
-	limitedPipe(ctx, os.Stdin, os.Stdout, *speed)
+	switch len(flag.Args()) {
+	case 0:
+		limitedPipe(ctx, os.Stdin, os.Stdout, *speed, 0)
+	case 1:
+		cur, err := os.Getwd()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "\n\nGet Working Directory Error :%v\n", err)
+			os.Exit(9)
+		}
+		filename := flag.Args()[0]
+		filePath := filepath.Join(cur, filename)
+		fileinfo, err := os.Stat(filePath)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "\n\nFile Read Error :%v\n", err)
+			os.Exit(9)
+		}
+		file, err := os.Open(filePath)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "\n\nFile Open Error :%v\n", err)
+			os.Exit(9)
+		}
+		defer file.Close()
+		//fmt.Printf("file size=%d\n", fileinfo.Size())
+		limitedPipe(ctx, file, os.Stdout, *speed, int(fileinfo.Size()))
+	default:
+		fmt.Fprintf(os.Stderr, "\n\nParameter Error\n") // Todo read more than one file at once
+		os.Exit(9)
+
+	}
+
 }
 
 const BUFSIZE = 4096
@@ -50,7 +80,7 @@ func read(in io.Reader, rb chan readbuf) {
 	}
 }
 
-func limitedPipe(ctx context.Context, in io.Reader, out io.Writer, speed int) {
+func limitedPipe(ctx context.Context, in io.Reader, out io.Writer, speed int, size int) {
 	var cancel context.CancelFunc
 	ctx, cancel = context.WithCancel(ctx)
 
@@ -63,15 +93,17 @@ func limitedPipe(ctx context.Context, in io.Reader, out io.Writer, speed int) {
 
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
-	mon := newMonitor(ctx, cancel)
+
+	sk := NewSpeedKeeper(time.Now(), speed, size)
+
+	mon := newMonitor(ctx, cancel, sk)
 	go func() {
 		mon.run()
 		wg.Done()
 	}()
 
-	tick := time.NewTicker(time.Millisecond * time.Duration(200)).C
+	tick := time.NewTicker(time.Millisecond * time.Duration(50)).C
 
-	sk := NewSpeedKeeper(time.Now(), speed)
 	readBytes := 0
 L:
 	for {
@@ -81,13 +113,9 @@ L:
 			out.Write(rb.buf)
 			sk.killTime(readBytes)
 		case <-tick:
-			//mon.msg <- fmt.Sprintf("\r\033[K[%s] %dBytes\t@ %dKBps",
-			mon.msg <- fmt.Sprintf("[%s] %dBytes\t@ %dKBps",
-				time.Now().Format("2006/01/02 15:04:05.000 MST"),
-				readBytes,
-				sk.currentSpeed(readBytes)/1024)
+			mon.progress <- struct{}{}
 		case <-done:
-			mon.msg <- fmt.Sprintf("\n")
+			mon.progress <- struct{}{}
 			cancel()
 			break L
 		case <-ctx.Done():
@@ -98,19 +126,27 @@ L:
 	wg.Wait()
 }
 
+//
+// The speedKeeper is a goroutine which keeps input/output speed. --> not a goroutine
+//
+
 type speedKeeper struct {
 	start      time.Time
 	bytePerSec int
+	size       int
+	current    int
 }
 
-func NewSpeedKeeper(s time.Time, b int) *speedKeeper {
+func NewSpeedKeeper(s time.Time, b int, size int) *speedKeeper {
 	return &speedKeeper{
 		start:      s,
 		bytePerSec: b,
+		size:       size,
 	}
 }
 
 func (sk *speedKeeper) killTime(curBytes int) {
+	sk.current = curBytes
 	if sk.bytePerSec <= 0 {
 		return
 	}
@@ -126,54 +162,61 @@ func (sk *speedKeeper) killTime(curBytes int) {
 	}
 }
 
-func (sk *speedKeeper) currentSpeed(curBytes int) int {
+func (sk *speedKeeper) currentSpeed() int {
 	//d := int(time.Since(sk.start).Seconds())
 	d := int(time.Since(sk.start).Nanoseconds())
 	if d == 0 {
 		return 0
 	}
-	return curBytes * 1e9 / d
+	return sk.current * 1e9 / d
 }
 
+//
+// The monitor is a progress monitoring goroutine.
+//
+
 type monitor struct {
-	ctx    context.Context
-	cancel func()
-	tty    io.Writer
-	//tty *os.File
-	msg chan string
+	ctx      context.Context
+	cancel   func()
+	tty      io.Writer
+	progress chan struct{}
+	sk       *speedKeeper
 }
 
 func getTty() *os.File {
 	device := "/dev/tty"
 	tty, err := os.Create(device)
 	if err != nil {
-		// Openエラー処理
 		fmt.Printf("File Open Error device:%s error:%v\n", device, err)
 	}
 	return tty
 }
 
-func newMonitor(ctx context.Context, cancel func()) *monitor {
+func newMonitor(ctx context.Context, cancel func(), sk *speedKeeper) *monitor {
 	return &monitor{
-		ctx:    ctx,
-		cancel: cancel,
-		tty:    getTty(),
-		msg:    make(chan string),
+		ctx:      ctx,
+		cancel:   cancel,
+		tty:      getTty(),
+		progress: make(chan struct{}),
+		sk:       sk,
 	}
 }
 
-func (mon *monitor) print(s string) {
-	//mon.msg <- fmt.Sprintf("\r\033[K[%s] %dBytes\t@ %dKBps",
-	fmt.Fprintf(mon.tty, "\r\033[K%s", s)
+func (mon *monitor) printProgress() {
+	fmt.Fprintf(mon.tty, "\r\033[K[%s] %dBytes\t@ %dKBps",
+		time.Now().Format("2006/01/02 15:04:05.000 MST"),
+		mon.sk.current,
+		mon.sk.currentSpeed()/1024)
 }
 
 func (mon *monitor) run() {
 L:
 	for {
 		select {
-		case m := <-mon.msg:
-			mon.print(m)
+		case <-mon.progress:
+			mon.printProgress()
 		case <-mon.ctx.Done():
+			fmt.Fprintf(mon.tty, "\n")
 			break L
 		}
 	}
