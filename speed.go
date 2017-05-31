@@ -20,6 +20,24 @@ func dprintf(format string, a ...interface{}) {
 	}
 }
 
+func openfile(filename string) (*os.File, os.FileInfo, error) {
+	cur, err := os.Getwd()
+	if err != nil {
+		return nil, nil, err
+	}
+	//filename := flag.Args()[0]
+	filePath := filepath.Join(cur, filename)
+	fileinfo, err := os.Stat(filePath)
+	if err != nil {
+		return nil, nil, err
+	}
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, nil, err
+	}
+	return file, fileinfo, nil
+}
+
 func main() {
 	ctx := context.Background()
 
@@ -30,25 +48,12 @@ func main() {
 	case 0:
 		limitedPipe(ctx, os.Stdin, os.Stdout, *speed, 0)
 	case 1:
-		cur, err := os.Getwd()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "\n\nGet Working Directory Error :%v\n", err)
-			os.Exit(9)
-		}
-		filename := flag.Args()[0]
-		filePath := filepath.Join(cur, filename)
-		fileinfo, err := os.Stat(filePath)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "\n\nFile Read Error :%v\n", err)
-			os.Exit(9)
-		}
-		file, err := os.Open(filePath)
+		file, fileinfo, err := openfile(flag.Args()[0])
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "\n\nFile Open Error :%v\n", err)
 			os.Exit(9)
 		}
 		defer file.Close()
-		//fmt.Printf("file size=%d\n", fileinfo.Size())
 		limitedPipe(ctx, file, os.Stdout, *speed, int(fileinfo.Size()))
 	default:
 		fmt.Fprintf(os.Stderr, "\n\nParameter Error\n") // Todo read more than one file at once
@@ -116,7 +121,6 @@ L:
 		case rb := <-rbchan:
 			readBytes += rb.length
 			out.Write(rb.buf)
-			//sk.killTime(readBytes)
 			sk.curchan <- readBytes
 			<-sk.killTime()
 		case <-tick:
@@ -175,7 +179,6 @@ L:
 func (sk *speedKeeper) killTime() <-chan struct{} {
 	outchan := make(chan struct{})
 	go func() {
-		//sk.current = curBytes
 		if sk.bytePerSec > 0 {
 			//target_duration := time.Duration(float64(curBytes/sk.bytePerSec)) * time.Second //NG
 			//target_duration := time.Duration(float64(curBytes*1e9/sk.bytePerSec)) * time.Nanosecond
@@ -236,9 +239,14 @@ func newMonitor(ctx context.Context, cancel func(), sk *speedKeeper) *monitor {
 }
 
 func (mon *monitor) printProgress() {
-	fmt.Fprintf(mon.tty, "\r\033[K[%s] %dBytes\t@ %dKBps",
+	p := ""
+	if mon.sk.size > 0 {
+		p = fmt.Sprintf("(%3d%%)", int(mon.sk.current*100/mon.sk.size))
+	}
+	fmt.Fprintf(mon.tty, "\r\033[K[%s] %dBytes%s\t@ %dKBps",
 		time.Now().Format("2006/01/02 15:04:05.000 MST"),
 		mon.sk.current,
+		p,
 		mon.sk.currentSpeed()/1024)
 }
 
@@ -248,6 +256,9 @@ L:
 		select {
 		case <-mon.progress:
 			mon.printProgress()
+			//if mon.sk.current == mon.sk.size {
+			//mon.cancel()
+			//}
 		case <-mon.ctx.Done():
 			fmt.Fprintf(mon.tty, "\n")
 			break L
