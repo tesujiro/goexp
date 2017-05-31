@@ -39,14 +39,9 @@ func openfile(filename string) (*os.File, os.FileInfo, error) {
 }
 
 func main() {
-	ctx := context.Background()
-
-	var speed *int = flag.Int("bandwidth", 0, "Bytes Per Sec.")
-	flag.Parse()
-
 	switch len(flag.Args()) {
 	case 0:
-		limitedPipe(ctx, os.Stdin, os.Stdout, *speed, 0)
+		limitedPipe(os.Stdin, os.Stdout, 0)
 	case 1:
 		file, fileinfo, err := openfile(flag.Args()[0])
 		if err != nil {
@@ -54,7 +49,7 @@ func main() {
 			os.Exit(9)
 		}
 		defer file.Close()
-		limitedPipe(ctx, file, os.Stdout, *speed, int(fileinfo.Size()))
+		limitedPipe(file, os.Stdout, int(fileinfo.Size()))
 	default:
 		fmt.Fprintf(os.Stderr, "\n\nParameter Error\n") // Todo read more than one file at once
 		os.Exit(9)
@@ -83,9 +78,15 @@ func read(in io.Reader, rb chan readbuf) {
 	}
 }
 
-func limitedPipe(ctx context.Context, in io.Reader, out io.Writer, speed int, size int) {
+func limitedPipe(in io.Reader, out io.Writer, size int) {
+	ctx := context.Background()
 	var cancel context.CancelFunc
 	ctx, cancel = context.WithCancel(ctx)
+
+	// Todo: split Option parsing
+	var speed *int = flag.Int("bandwidth", 0, "Bytes Per Sec.")
+	var silent *bool = flag.Bool("silent", false, "Silent Mode")
+	flag.Parse()
 
 	rbchan := make(chan readbuf, 1)
 	done_reading := make(chan struct{}, 1)
@@ -97,7 +98,7 @@ func limitedPipe(ctx context.Context, in io.Reader, out io.Writer, speed int, si
 	wg := &sync.WaitGroup{}
 
 	//sk := NewSpeedKeeper(time.Now(), speed, size)
-	sk := NewSpeedKeeper(ctx, cancel, time.Now(), speed, size)
+	sk := NewSpeedKeeper(ctx, cancel, time.Now(), *speed, size)
 	wg.Add(1)
 	go func() {
 		sk.run()
@@ -105,6 +106,9 @@ func limitedPipe(ctx context.Context, in io.Reader, out io.Writer, speed int, si
 	}()
 
 	mon := newMonitor(ctx, cancel, sk)
+	if *silent == true {
+		mon.setMode("silent")
+	}
 	wg.Add(1)
 	go func() {
 		mon.run()
@@ -234,6 +238,10 @@ func newMonitor(ctx context.Context, cancel func(), sk *speedKeeper) *monitor {
 		progress: make(chan struct{}),
 		sk:       sk,
 	}
+}
+
+func (mon *monitor) setMode(mode string) {
+	mon.mode = mode
 }
 
 func (mon *monitor) standardProgress() {
