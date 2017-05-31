@@ -58,9 +58,7 @@ func main() {
 	default:
 		fmt.Fprintf(os.Stderr, "\n\nParameter Error\n") // Todo read more than one file at once
 		os.Exit(9)
-
 	}
-
 }
 
 const BUFSIZE = 4096
@@ -133,7 +131,6 @@ L:
 			break L
 		}
 	}
-	//<-ctx.Done()
 	wg.Wait()
 }
 
@@ -217,6 +214,7 @@ type monitor struct {
 	tty      io.Writer
 	progress chan struct{}
 	sk       *speedKeeper
+	mode     string // Monitor Mode : Standard, Silent, Graphical,
 }
 
 func getTty() *os.File {
@@ -238,7 +236,7 @@ func newMonitor(ctx context.Context, cancel func(), sk *speedKeeper) *monitor {
 	}
 }
 
-func (mon *monitor) printProgress() {
+func (mon *monitor) standardProgress() {
 	p := ""
 	if mon.sk.size > 0 {
 		p = fmt.Sprintf("(%3d%%)", int(mon.sk.current*100/mon.sk.size))
@@ -251,16 +249,27 @@ func (mon *monitor) printProgress() {
 }
 
 func (mon *monitor) run() {
+	var pFunc, endFunc func()
+	switch mon.mode {
+	case "silent":
+		pFunc = func() {}
+		endFunc = func() {}
+	default:
+		pFunc = mon.standardProgress
+		endFunc = func() {
+			fmt.Fprintf(mon.tty, "\n")
+		}
+	}
 L:
 	for {
 		select {
 		case <-mon.progress:
-			mon.printProgress()
+			pFunc()
 			//if mon.sk.current == mon.sk.size {
 			//mon.cancel()
 			//}
 		case <-mon.ctx.Done():
-			fmt.Fprintf(mon.tty, "\n")
+			endFunc()
 			break L
 		}
 	}
