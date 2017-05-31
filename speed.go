@@ -38,21 +38,50 @@ func openfile(filename string) (*os.File, os.FileInfo, error) {
 	return file, fileinfo, nil
 }
 
-func main() {
+type option struct {
+	speed    int
+	silent   bool
+	filename string
+}
+
+func getOption() *option {
+	// Todo: split Option parsing
+	var speed *int = flag.Int("bandwidth", 0, "Bytes Per Sec.")
+	var silent *bool = flag.Bool("silent", false, "Silent Mode")
+	flag.Parse()
+
+	var filename string
 	switch len(flag.Args()) {
 	case 0:
-		limitedPipe(os.Stdin, os.Stdout, 0)
+		filename = ""
 	case 1:
-		file, fileinfo, err := openfile(flag.Args()[0])
+		filename = flag.Args()[0]
+	default:
+		fmt.Fprintf(os.Stderr, "\n\nParameter Error\n") // Todo read more than one file at once
+		os.Exit(9)
+	}
+
+	return &option{
+		speed:    *speed,
+		silent:   *silent,
+		filename: filename,
+	}
+}
+
+func main() {
+
+	option := getOption()
+
+	if option.filename == "" {
+		limitedPipe(os.Stdin, os.Stdout, 0, option)
+	} else {
+		file, fileinfo, err := openfile(option.filename)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "\n\nFile Open Error :%v\n", err)
 			os.Exit(9)
 		}
 		defer file.Close()
-		limitedPipe(file, os.Stdout, int(fileinfo.Size()))
-	default:
-		fmt.Fprintf(os.Stderr, "\n\nParameter Error\n") // Todo read more than one file at once
-		os.Exit(9)
+		limitedPipe(file, os.Stdout, int(fileinfo.Size()), option)
 	}
 }
 
@@ -78,15 +107,10 @@ func read(in io.Reader, rb chan readbuf) {
 	}
 }
 
-func limitedPipe(in io.Reader, out io.Writer, size int) {
+func limitedPipe(in io.Reader, out io.Writer, size int, option *option) {
 	ctx := context.Background()
 	var cancel context.CancelFunc
 	ctx, cancel = context.WithCancel(ctx)
-
-	// Todo: split Option parsing
-	var speed *int = flag.Int("bandwidth", 0, "Bytes Per Sec.")
-	var silent *bool = flag.Bool("silent", false, "Silent Mode")
-	flag.Parse()
 
 	rbchan := make(chan readbuf, 1)
 	done_reading := make(chan struct{}, 1)
@@ -98,7 +122,7 @@ func limitedPipe(in io.Reader, out io.Writer, size int) {
 	wg := &sync.WaitGroup{}
 
 	//sk := NewSpeedKeeper(time.Now(), speed, size)
-	sk := NewSpeedKeeper(ctx, cancel, time.Now(), *speed, size)
+	sk := NewSpeedKeeper(ctx, cancel, time.Now(), option.speed, size)
 	wg.Add(1)
 	go func() {
 		sk.run()
@@ -106,7 +130,7 @@ func limitedPipe(in io.Reader, out io.Writer, size int) {
 	}()
 
 	mon := newMonitor(ctx, cancel, sk)
-	if *silent == true {
+	if option.silent == true {
 		mon.setMode("silent")
 	}
 	wg.Add(1)
