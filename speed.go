@@ -41,6 +41,7 @@ func openfile(filename string) (*os.File, os.FileInfo, error) {
 type option struct {
 	speed    int
 	silent   bool
+	graph    bool
 	filename string
 }
 
@@ -48,6 +49,7 @@ func getOption() *option {
 	// Todo: split Option parsing
 	var speed *int = flag.Int("bandwidth", 0, "Bytes Per Sec.")
 	var silent *bool = flag.Bool("silent", false, "Silent Mode")
+	var graph *bool = flag.Bool("graph", false, "Graphic Mode")
 	flag.Parse()
 
 	var filename string
@@ -64,6 +66,7 @@ func getOption() *option {
 	return &option{
 		speed:    *speed,
 		silent:   *silent,
+		graph:    *graph,
 		filename: filename,
 	}
 }
@@ -133,6 +136,10 @@ func limitedPipe(in io.Reader, out io.Writer, size int, option *option) {
 	if option.silent == true {
 		mon.setMode("silent")
 	}
+	if option.graph == true {
+		mon.setMode("graph")
+	}
+
 	wg.Add(1)
 	go func() {
 		mon.run()
@@ -174,7 +181,6 @@ type speedKeeper struct {
 	size       int
 	current    int
 	curchan    chan int
-	outchan    chan struct{}
 }
 
 func NewSpeedKeeper(ctx context.Context, cancel func(), s time.Time, b int, size int) *speedKeeper {
@@ -280,12 +286,40 @@ func (mon *monitor) standardProgress() {
 		mon.sk.currentSpeed()/1024)
 }
 
+func (mon *monitor) getGraphProgress() func() {
+	//var barlen int
+	var bar string
+
+	return func() {
+		p := ""
+		if mon.sk.size > 0 {
+			p = fmt.Sprintf("(%3d%%)", int(mon.sk.current*100/mon.sk.size))
+			bar = bar + "*"
+		} else {
+			bar = bar + "*"
+		}
+
+		fmt.Fprintf(mon.tty, "\r\033[K[%s] %dBytes%s\t@ %dKBps\t%s",
+			time.Now().Format("2006/01/02 15:04:05.000 MST"),
+			mon.sk.current,
+			p,
+			mon.sk.currentSpeed()/1024,
+			bar,
+		)
+	}
+}
+
 func (mon *monitor) run() {
 	var pFunc, endFunc func()
 	switch mon.mode {
 	case "silent":
 		pFunc = func() {}
 		endFunc = func() {}
+	case "graph":
+		pFunc = mon.getGraphProgress()
+		endFunc = func() {
+			fmt.Fprintf(mon.tty, "\n")
+		}
 	default:
 		pFunc = mon.standardProgress
 		endFunc = func() {
