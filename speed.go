@@ -100,6 +100,7 @@ func read(in io.Reader, rb chan readbuf) {
 	buf := make([]byte, BUFSIZE)
 	for {
 		if n, err := reader.Read(buf); n == 0 || err == io.EOF {
+			rb <- readbuf{length: n, buf: buf}
 			break
 		} else if err != nil {
 			fmt.Fprintf(os.Stderr, "\n\nFile Read Error :%v\n", err)
@@ -116,10 +117,10 @@ func limitedPipe(in io.Reader, out io.Writer, size int, option *option) {
 	ctx, cancel = context.WithCancel(ctx)
 
 	rbchan := make(chan readbuf, 1)
-	done_reading := make(chan struct{}, 1)
+	reading_done := make(chan struct{}, 1)
 	go func() {
 		read(in, rbchan)
-		done_reading <- struct{}{}
+		reading_done <- struct{}{}
 	}()
 
 	wg := &sync.WaitGroup{}
@@ -158,7 +159,7 @@ L:
 			<-sk.killTime()
 		case <-tick:
 			mon.progress <- struct{}{}
-		case <-done_reading:
+		case <-reading_done:
 			mon.progress <- struct{}{}
 			cancel()
 			break L
@@ -246,9 +247,9 @@ type monitor struct {
 	ctx      context.Context
 	cancel   func()
 	tty      io.Writer
-	progress chan struct{}
 	sk       *speedKeeper
 	mode     string // Monitor Mode : Standard, Silent, Graphical,
+	progress chan struct{}
 }
 
 func getTty() *os.File {
@@ -265,8 +266,8 @@ func newMonitor(ctx context.Context, cancel func(), sk *speedKeeper) *monitor {
 		ctx:      ctx,
 		cancel:   cancel,
 		tty:      getTty(),
-		progress: make(chan struct{}),
 		sk:       sk,
+		progress: make(chan struct{}),
 	}
 }
 
