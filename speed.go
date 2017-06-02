@@ -288,7 +288,6 @@ func (mon *monitor) standardProgress() {
 }
 
 func (mon *monitor) getGraphProgress() func() {
-	//var barlen int
 	var bar string
 
 	return func() {
@@ -310,34 +309,65 @@ func (mon *monitor) getGraphProgress() func() {
 	}
 }
 
+type progesser interface {
+	initFunc()
+	pFunc()
+	endFunc()
+}
+
+type kara struct{}
+
 func (mon *monitor) run() {
-	var pFunc, endFunc func()
+	var initFunc, pFunc, endFunc func()
+	//var p progresser
 	switch mon.mode {
 	case "silent":
-		pFunc = func() {}
-		endFunc = func() {}
+		//p = silentProgresser
+		p = &struct{}{
+			initFunc: func() {},
+			pFunc:    func() {},
+			endFunc:  func() {},
+		}
 	case "graph":
-		pFunc = mon.getGraphProgress()
-		endFunc = func() {
-			fmt.Fprintf(mon.tty, "\n")
+		p = &struct{}{
+			initFunc: func() {},
+			pFunc:    mon.getGraphProgress(),
+			endFunc: func() {
+				fmt.Fprintf(mon.tty, "\n")
+			},
 		}
+		//initFunc = func() {}
+		//pFunc = mon.getGraphProgress()
+		//endFunc = func() {
+		//fmt.Fprintf(mon.tty, "\n")
+		//}
 	default:
-		pFunc = mon.standardProgress
-		endFunc = func() {
-			fmt.Fprintf(mon.tty, "\n")
+		p = &struct{}{
+			initFunc: func() {},
+			pFunc:    mon.standardProgress,
+			endFunc: func() {
+				fmt.Fprintf(mon.tty, "\n")
+			},
 		}
+		//initFunc = func() {}
+		//pFunc = mon.standardProgress
+		//endFunc = func() {
+		//fmt.Fprintf(mon.tty, "\n")
+		//}
 	}
 L:
+	p.initFunc()
 	for {
 		select {
 		case <-mon.progress:
-			pFunc()
+			p.pFunc()
+			//pFunc()
 			//if mon.sk.current == mon.sk.size {
 			//mon.cancel()
 			//}
 		case <-mon.ctx.Done():
-			endFunc()
 			break L
 		}
 	}
+	p.endFunc()
 }
