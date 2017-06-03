@@ -95,18 +95,22 @@ type readbuf struct {
 	buf    []byte
 }
 
-func read(in io.Reader, rb chan readbuf) {
+func read(in io.Reader, rb chan readbuf, writing_done <-chan struct{}) {
 	reader := bufio.NewReader(in)
 	buf := make([]byte, BUFSIZE)
 	for {
-		if n, err := reader.Read(buf); n == 0 || err == io.EOF {
+		if n, err := reader.Read(buf); n == 0 {
+			break
+		} else if err == io.EOF {
 			rb <- readbuf{length: n, buf: buf}
+			<-writing_done
 			break
 		} else if err != nil {
 			fmt.Fprintf(os.Stderr, "\n\nFile Read Error :%v\n", err)
 			os.Exit(9)
 		} else {
 			rb <- readbuf{length: n, buf: buf}
+			<-writing_done
 		}
 	}
 }
@@ -116,10 +120,11 @@ func limitedPipe(in io.Reader, out io.Writer, size int, option *option) {
 	var cancel context.CancelFunc
 	ctx, cancel = context.WithCancel(ctx)
 
-	rbchan := make(chan readbuf, 1)
-	reading_done := make(chan struct{}, 1)
+	rbchan := make(chan readbuf)
+	reading_done := make(chan struct{})
+	writing_done := make(chan struct{})
 	go func() {
-		read(in, rbchan)
+		read(in, rbchan, writing_done)
 		reading_done <- struct{}{}
 	}()
 
@@ -153,9 +158,13 @@ L:
 	for {
 		select {
 		case rb := <-rbchan:
+			if rb.length == 0 {
+				continue
+			}
 			readBytes += rb.length
-			out.Write(rb.buf)
+			out.Write(rb.buf[:rb.length])
 			sk.curchan <- readBytes
+			writing_done <- struct{}{}
 			<-sk.killTime()
 		case <-tick:
 			mon.progress <- struct{}{}
@@ -309,59 +318,38 @@ func (mon *monitor) getGraphProgress() func() {
 	}
 }
 
-type progesser interface {
-	initFunc()
-	pFunc()
-	endFunc()
-}
-
-type kara struct{}
+//type progresser interface {
+//initFunc()
+//pFunc()
+//endFunc()
+//}
 
 func (mon *monitor) run() {
 	var initFunc, pFunc, endFunc func()
-	//var p progresser
 	switch mon.mode {
 	case "silent":
-		//p = silentProgresser
-		p = &struct{}{
-			initFunc: func() {},
-			pFunc:    func() {},
-			endFunc:  func() {},
-		}
+		initFunc = func() {}
+		pFunc = func() {}
+		endFunc = func() {}
 	case "graph":
-		p = &struct{}{
-			initFunc: func() {},
-			pFunc:    mon.getGraphProgress(),
-			endFunc: func() {
-				fmt.Fprintf(mon.tty, "\n")
-			},
+		initFunc = func() {}
+		pFunc = mon.getGraphProgress()
+		endFunc = func() {
+			fmt.Fprintf(mon.tty, "\n")
 		}
-		//initFunc = func() {}
-		//pFunc = mon.getGraphProgress()
-		//endFunc = func() {
-		//fmt.Fprintf(mon.tty, "\n")
-		//}
 	default:
-		p = &struct{}{
-			initFunc: func() {},
-			pFunc:    mon.standardProgress,
-			endFunc: func() {
-				fmt.Fprintf(mon.tty, "\n")
-			},
+		initFunc = func() {}
+		pFunc = mon.standardProgress
+		endFunc = func() {
+			fmt.Fprintf(mon.tty, "\n")
 		}
-		//initFunc = func() {}
-		//pFunc = mon.standardProgress
-		//endFunc = func() {
-		//fmt.Fprintf(mon.tty, "\n")
-		//}
 	}
+	initFunc()
 L:
-	p.initFunc()
 	for {
 		select {
 		case <-mon.progress:
-			p.pFunc()
-			//pFunc()
+			pFunc()
 			//if mon.sk.current == mon.sk.size {
 			//mon.cancel()
 			//}
@@ -369,5 +357,5 @@ L:
 			break L
 		}
 	}
-	p.endFunc()
+	endFunc()
 }
