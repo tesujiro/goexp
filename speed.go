@@ -8,11 +8,35 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strconv"
 	"sync"
 	"time"
 )
 
 const DEBUG = 0
+
+type ByteSize float64
+
+const (
+	_           = iota             // ignore first value by assigning to blank identifier
+	KB ByteSize = 1 << (10 * iota) // 1 << (10*1)
+	MB                             // 1 << (10*2)
+	GB                             // 1 << (10*3)
+	TB                             // 1 << (10*4)
+	PB                             // 1 << (10*5)
+	EB                             // 1 << (10*6)
+	ZB                             // 1 << (10*7)
+	YB                             // 1 << (10*8)
+)
+
+var BinaryPrefixDict = map[string]float64{
+	"":  1,
+	"K": 1 << 10, "M": 1 << 20, "G": 1 << 30, "T": 1 << 40,
+	"P": 1 << 50, "E": 1 << 60, "Z": 1 << 70, "Y": 1 << 80,
+	"Ki": 1 << 10, "Mi": 1 << 20, "Gi": 1 << 30, "Ti": 1 << 40,
+	"Pi": 1 << 50, "Ei": 1 << 60, "Zi": 1 << 70, "Yi": 1 << 80,
+}
 
 func dprintf(format string, a ...interface{}) {
 	if DEBUG != 0 {
@@ -40,6 +64,7 @@ func openfile(filename string) (*os.File, os.FileInfo, error) {
 
 type option struct {
 	speed    int
+	unit     string
 	silent   bool
 	graph    bool
 	filename string
@@ -47,10 +72,30 @@ type option struct {
 
 func getOption() *option {
 	// Todo: split Option parsing
-	var speed *int = flag.Int("bandwidth", 0, "Bytes Per Sec.")
+	//var speed *int = flag.Int("bandwidth", 0, "Bytes Per Sec.")
+	var bw *string = flag.String("bandwidth", "", "Bytes Per Sec.")
 	var silent *bool = flag.Bool("silent", false, "Silent Mode")
 	var graph *bool = flag.Bool("graph", false, "Graphic Mode")
 	flag.Parse()
+
+	bw_regex := regexp.MustCompile(`^([\d]+)([[KMGTPEZY]i?]?)?B?$`)
+	result := bw_regex.FindAllStringSubmatch(*bw, -1)
+	fmt.Printf("*bw=%s\n", *bw)
+	fmt.Printf("result=%v\n", result)
+	var speed int
+	var unit string
+	if i, err := strconv.Atoi(result[0][1]); err != nil {
+		fmt.Fprintf(os.Stderr, "\n\nParameter Error (bandwidth:%s)\n", *bw)
+		os.Exit(9)
+	} else {
+		if len(result[0]) > 2 {
+			unit = result[0][2]
+			speed = i * int(BinaryPrefixDict[unit])
+		} else {
+			unit = ""
+			speed = i
+		}
+	}
 
 	var filename string
 	switch len(flag.Args()) {
@@ -64,7 +109,8 @@ func getOption() *option {
 	}
 
 	return &option{
-		speed:    *speed,
+		speed:    speed,
+		unit:     unit,
 		silent:   *silent,
 		graph:    *graph,
 		filename: filename,
@@ -145,6 +191,7 @@ func limitedPipe(in io.Reader, out io.Writer, size int, option *option) {
 	if option.graph == true {
 		mon.setMode("graph")
 	}
+	mon.setOption(option)
 
 	wg.Add(1)
 	go func() {
@@ -259,6 +306,7 @@ type monitor struct {
 	sk       *speedKeeper
 	mode     string // Monitor Mode : Standard, Silent, Graphical,
 	progress chan struct{}
+	option   *option
 }
 
 func getTty() *os.File {
@@ -284,16 +332,22 @@ func (mon *monitor) setMode(mode string) {
 	mon.mode = mode
 }
 
+func (mon *monitor) setOption(option *option) {
+	mon.option = option
+}
+
 func (mon *monitor) standardProgress() {
 	p := ""
 	if mon.sk.size > 0 {
 		p = fmt.Sprintf("(%3d%%)", int(mon.sk.current*100/mon.sk.size))
 	}
-	fmt.Fprintf(mon.tty, "\r\033[K[%s] %dBytes%s\t@ %dKBps",
+	fmt.Fprintf(mon.tty, "\r\033[K[%s] %dBytes%s\t@ %.1f%sBps",
 		time.Now().Format("2006/01/02 15:04:05.000 MST"),
 		mon.sk.current,
 		p,
-		mon.sk.currentSpeed()/1024)
+		float64(mon.sk.currentSpeed())/BinaryPrefixDict[mon.option.unit],
+		mon.option.unit,
+	)
 }
 
 func (mon *monitor) getGraphProgress() func() {
@@ -308,11 +362,12 @@ func (mon *monitor) getGraphProgress() func() {
 			bar = bar + "*"
 		}
 
-		fmt.Fprintf(mon.tty, "\r\033[K[%s] %dBytes%s\t@ %dKBps\t%s",
+		fmt.Fprintf(mon.tty, "\r\033[K[%s] %dBytes%s\t@ %.1f%sBps\t%s",
 			time.Now().Format("2006/01/02 15:04:05.000 MST"),
 			mon.sk.current,
 			p,
-			mon.sk.currentSpeed()/1024,
+			float64(mon.sk.currentSpeed())/BinaryPrefixDict[mon.option.unit],
+			mon.option.unit,
 			bar,
 		)
 	}
