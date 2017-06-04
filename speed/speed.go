@@ -86,6 +86,10 @@ func getOption() *option {
 	} else {
 		bw_regex := regexp.MustCompile(`^([\d]+)([[KMGTPEZY]i?]?)?B?$`)
 		result := bw_regex.FindAllStringSubmatch(*bw, -1)
+		if len(result) == 0 {
+			fmt.Fprintf(os.Stderr, "\n\nParameter Error (bandwidth:%s)\n", *bw)
+			os.Exit(9)
+		}
 		fmt.Printf("*bw=%s\n", *bw)
 		fmt.Printf("result=%v\n", result)
 		if i, err := strconv.Atoi(result[0][1]); err != nil {
