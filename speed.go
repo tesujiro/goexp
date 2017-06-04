@@ -78,22 +78,27 @@ func getOption() *option {
 	var graph *bool = flag.Bool("graph", false, "Graphic Mode")
 	flag.Parse()
 
-	bw_regex := regexp.MustCompile(`^([\d]+)([[KMGTPEZY]i?]?)?B?$`)
-	result := bw_regex.FindAllStringSubmatch(*bw, -1)
-	fmt.Printf("*bw=%s\n", *bw)
-	fmt.Printf("result=%v\n", result)
 	var speed int
 	var unit string
-	if i, err := strconv.Atoi(result[0][1]); err != nil {
-		fmt.Fprintf(os.Stderr, "\n\nParameter Error (bandwidth:%s)\n", *bw)
-		os.Exit(9)
+	if *bw == "" {
+		speed = 0
+		unit = "M"
 	} else {
-		if len(result[0]) > 2 {
-			unit = result[0][2]
-			speed = i * int(BinaryPrefixDict[unit])
+		bw_regex := regexp.MustCompile(`^([\d]+)([[KMGTPEZY]i?]?)?B?$`)
+		result := bw_regex.FindAllStringSubmatch(*bw, -1)
+		fmt.Printf("*bw=%s\n", *bw)
+		fmt.Printf("result=%v\n", result)
+		if i, err := strconv.Atoi(result[0][1]); err != nil {
+			fmt.Fprintf(os.Stderr, "\n\nParameter Error (bandwidth:%s)\n", *bw)
+			os.Exit(9)
 		} else {
-			unit = ""
-			speed = i
+			if len(result[0]) > 2 {
+				unit = result[0][2]
+				speed = i * int(BinaryPrefixDict[unit])
+			} else {
+				unit = ""
+				speed = i
+			}
 		}
 	}
 
