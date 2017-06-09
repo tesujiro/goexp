@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-const DEBUG = 0
+var DEBUG bool = false
 
 type ByteSize float64
 
@@ -39,7 +39,7 @@ var BinaryPrefixDict = map[string]float64{
 }
 
 func dprintf(format string, a ...interface{}) {
-	if DEBUG != 0 {
+	if DEBUG {
 		fmt.Fprintf(os.Stderr, format, a...)
 	}
 }
@@ -76,6 +76,7 @@ func getOption() *option {
 	var bw *string = flag.String("bandwidth", "", "Bytes Per Sec.")
 	var silent *bool = flag.Bool("silent", false, "Silent Mode")
 	var graph *bool = flag.Bool("graph", false, "Graphic Mode")
+	var debug *bool = flag.Bool("debug", false, "Debug Mode")
 	flag.Parse()
 
 	var speed int
@@ -105,6 +106,7 @@ func getOption() *option {
 			}
 		}
 	}
+	DEBUG = *debug
 
 	var filename string
 	switch len(flag.Args()) {
