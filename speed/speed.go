@@ -154,9 +154,6 @@ func main() {
 
 	option := getOption()
 
-	fmt.Fprintf(os.Stderr, "\n\nWidth=%d\n", getWidth())
-	os.Exit(0)
-
 	if option.filename == "" {
 		limitedPipe(os.Stdin, os.Stdout, 0, option)
 	} else {
@@ -343,6 +340,7 @@ type monitor struct {
 	mode     string // Monitor Mode : Standard, Silent, Graphical,
 	progress chan struct{}
 	option   *option
+	width    int
 }
 
 func getTty() *os.File {
@@ -377,7 +375,7 @@ func (mon *monitor) standardProgress() {
 	if mon.sk.size > 0 {
 		p = fmt.Sprintf("(%3d%%)", int(mon.sk.current*100/mon.sk.size))
 	}
-	fmt.Fprintf(mon.tty, "\r\033[K[%s] %dBytes%s\t@ %.1f%sBps",
+	fmt.Fprintf(mon.tty, "\r\033[K[%s]\t%dBytes%s\t@ %.1f%sBps",
 		time.Now().Format("2006/01/02 15:04:05.000 MST"),
 		mon.sk.current,
 		p,
@@ -387,24 +385,28 @@ func (mon *monitor) standardProgress() {
 }
 
 func (mon *monitor) getGraphProgress() func() {
-	var bar string
+	//mon.width = int(getWidth()) - 100
+	mon.width = 40
+	var bar_string string
+	for i := 0; i < mon.width; i++ {
+		bar_string = bar_string + "*"
+	}
+	bar := []byte(bar_string)
 
 	return func() {
 		p := ""
 		if mon.sk.size > 0 {
 			p = fmt.Sprintf("(%3d%%)", int(mon.sk.current*100/mon.sk.size))
-			bar = bar + "*"
-		} else {
-			bar = bar + "*"
 		}
 
-		fmt.Fprintf(mon.tty, "\r\033[K[%s] %dBytes%s\t@ %.1f%sBps\t%s",
+		fmt.Fprintf(mon.tty, "\r\033[K[%s]\t%dBytes%s\t@ %.1f%sBps\t[%-40s]",
 			time.Now().Format("2006/01/02 15:04:05.000 MST"),
 			mon.sk.current,
 			p,
 			float64(mon.sk.currentSpeed())/BinaryPrefixDict[mon.option.unit],
 			mon.option.unit,
-			bar,
+			bar[:int(mon.sk.current*mon.width/mon.sk.size)],
+			//bar_string,
 		)
 	}
 }
