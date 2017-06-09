@@ -11,7 +11,9 @@ import (
 	"regexp"
 	"strconv"
 	"sync"
+	"syscall"
 	"time"
+	"unsafe"
 )
 
 var DEBUG bool = false
@@ -42,6 +44,26 @@ func dprintf(format string, a ...interface{}) {
 	if DEBUG {
 		fmt.Fprintf(os.Stderr, format, a...)
 	}
+}
+
+type winsize struct {
+	Row    uint16
+	Col    uint16
+	Xpixel uint16
+	Ypixel uint16
+}
+
+func getWidth() uint {
+	ws := &winsize{}
+	retCode, _, errno := syscall.Syscall(syscall.SYS_IOCTL,
+		uintptr(syscall.Stdin),
+		uintptr(syscall.TIOCGWINSZ),
+		uintptr(unsafe.Pointer(ws)))
+
+	if int(retCode) == -1 {
+		panic(errno)
+	}
+	return uint(ws.Col)
 }
 
 func openfile(filename string) (*os.File, os.FileInfo, error) {
@@ -131,6 +153,9 @@ func getOption() *option {
 func main() {
 
 	option := getOption()
+
+	fmt.Fprintf(os.Stderr, "\n\nWidth=%d\n", getWidth())
+	os.Exit(0)
 
 	if option.filename == "" {
 		limitedPipe(os.Stdin, os.Stdout, 0, option)
