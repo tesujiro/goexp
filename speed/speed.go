@@ -386,7 +386,8 @@ func (mon *monitor) standardProgress() {
 
 func (mon *monitor) getGraphProgress() func() {
 	//mon.width = int(getWidth()) - 100
-	mon.width = 40
+	mon.width = int(getWidth() / 2)
+	//mon.width = 40
 	var bar_string string
 	for i := 0; i < mon.width; i++ {
 		bar_string = bar_string + "*"
@@ -399,7 +400,7 @@ func (mon *monitor) getGraphProgress() func() {
 			p = fmt.Sprintf("(%3d%%)", int(mon.sk.current*100/mon.sk.size))
 		}
 
-		fmt.Fprintf(mon.tty, "\r\033[K[%s]\t%dBytes%s\t@ %.1f%sBps\t[%-40s]",
+		fmt.Fprintf(mon.tty, "\r\033[K[%s]\t%dBytes%s\t@ %.1f%sBps\t[%-"+strconv.Itoa(mon.width)+"s]",
 			time.Now().Format("2006/01/02 15:04:05.000 MST"),
 			mon.sk.current,
 			p,
