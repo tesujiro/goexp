@@ -67,12 +67,19 @@ func getWidth() uint {
 }
 
 func openfile(filename string) (*os.File, os.FileInfo, error) {
-	cur, err := os.Getwd()
+	/*
+		cur, err := os.Getwd()
+		if err != nil {
+			return nil, nil, err
+		}
+		//filename := flag.Args()[0]
+		filePath := filepath.Join(cur, filename)
+	*/
+	filePath, err := filepath.Abs(filename)
 	if err != nil {
 		return nil, nil, err
 	}
-	//filename := flag.Args()[0]
-	filePath := filepath.Join(cur, filename)
+
 	fileinfo, err := os.Stat(filePath)
 	if err != nil {
 		return nil, nil, err
@@ -85,20 +92,21 @@ func openfile(filename string) (*os.File, os.FileInfo, error) {
 }
 
 type option struct {
-	speed    int
-	unit     string
-	tty      string
-	silent   bool
-	graph    bool
-	filename string
+	speed     int
+	unit      string
+	tty       string
+	silent    bool
+	graph     bool
+	filename  string
+	show_data bool
 }
 
 func getOption() *option {
-	// Todo: split Option parsing
 	var bw *string = flag.String("bandwidth", "", "Bytes Per Sec.")
 	var tty *string = flag.String("tty", "/dev/tty", "tty device name. default: tty")
 	var silent *bool = flag.Bool("silent", false, "Silent Mode")
 	var graph *bool = flag.Bool("graph", false, "Graphic Mode")
+	var data *bool = flag.Bool("show_data", false, "Show All Data Mode")
 	var debug *bool = flag.Bool("debug", false, "Debug Mode")
 	flag.Parse()
 
@@ -130,13 +138,15 @@ func getOption() *option {
 			}
 		}
 	}
-	// Parse tty
+
+	// Parse "tty"
 	tty_regex := regexp.MustCompile(`^.*/`)
 	tty_device := "/dev/" + tty_regex.ReplaceAllString(*tty, "")
 
 	// debug
 	DEBUG = *debug
 
+	// filenames
 	var filename string
 	switch len(flag.Args()) {
 	case 0:
@@ -149,12 +159,13 @@ func getOption() *option {
 	}
 
 	return &option{
-		speed:    speed,
-		unit:     unit,
-		tty:      tty_device,
-		silent:   *silent,
-		graph:    *graph,
-		filename: filename,
+		speed:     speed,
+		unit:      unit,
+		tty:       tty_device,
+		silent:    *silent,
+		graph:     *graph,
+		filename:  filename,
+		show_data: *data,
 	}
 }
 
@@ -251,6 +262,9 @@ L:
 			}
 			readBytes += rb.length
 			out.Write(rb.buf[:rb.length])
+			if option.show_data {
+				mon.data <- rb.buf[:rb.length]
+			}
 			sk.curchan <- readBytes
 			writing_done <- struct{}{}
 			<-sk.killTime()
@@ -347,6 +361,7 @@ type monitor struct {
 	sk       *speedKeeper
 	mode     string // Monitor Mode : Standard, Silent, Graphical,
 	progress chan struct{}
+	data     chan []byte
 	option   *option
 	width    int
 }
@@ -366,6 +381,7 @@ func newMonitor(ctx context.Context, cancel func(), sk *speedKeeper) *monitor {
 		cancel:   cancel,
 		sk:       sk,
 		progress: make(chan struct{}),
+		data:     make(chan []byte),
 	}
 }
 
@@ -379,6 +395,10 @@ func (mon *monitor) setOption(option *option) {
 
 func (mon *monitor) setTty() {
 	mon.tty = getTty(mon.option.tty)
+}
+
+func (mon *monitor) setWidth(w int) {
+	mon.width = w
 }
 
 func (mon *monitor) standardProgress() {
@@ -396,9 +416,7 @@ func (mon *monitor) standardProgress() {
 }
 
 func (mon *monitor) getGraphProgress() func() {
-	//mon.width = int(getWidth()) - 100
-	mon.width = int(getWidth() / 2)
-	//mon.width = 40
+	mon.setWidth(int(getWidth() / 2))
 	var bar_string string
 	for i := 0; i < mon.width; i++ {
 		bar_string = bar_string + "*"
@@ -418,29 +436,37 @@ func (mon *monitor) getGraphProgress() func() {
 			float64(mon.sk.currentSpeed())/BinaryPrefixDict[mon.option.unit],
 			mon.option.unit,
 			bar[:int(mon.sk.current*mon.width/mon.sk.size)],
-			//bar_string,
 		)
 	}
 }
 
-//type progresser interface {
-//initFunc()
-//pFunc()
-//endFunc()
+func (mon *monitor) showData(buf []byte) {
+	if mon.tty != nil {
+		fmt.Fprintf(mon.tty, "%s", buf)
+	}
+}
+
+//implicit type progresser interface {
+//	initFunc()
+//	pFunc()
+//	endFunc()
 //}
 
 func (mon *monitor) run() {
 	var initFunc, pFunc, endFunc func()
+	var showFunc func([]byte)
 	switch mon.mode {
 	case "silent":
 		initFunc = func() {}
 		pFunc = func() {}
+		showFunc = func(b []byte) {}
 		endFunc = func() {}
 	case "graph":
 		initFunc = func() {
 			mon.setTty()
 		}
 		pFunc = mon.getGraphProgress()
+		showFunc = mon.showData
 		endFunc = func() {
 			fmt.Fprintf(mon.tty, "\n")
 		}
@@ -449,6 +475,7 @@ func (mon *monitor) run() {
 			mon.setTty()
 		}
 		pFunc = mon.standardProgress
+		showFunc = mon.showData
 		endFunc = func() {
 			fmt.Fprintf(mon.tty, "\n")
 		}
@@ -464,6 +491,8 @@ L:
 			//}
 		case <-mon.ctx.Done():
 			break L
+		case buf := <-mon.data:
+			showFunc(buf)
 		}
 	}
 	endFunc()
