@@ -87,6 +87,7 @@ func openfile(filename string) (*os.File, os.FileInfo, error) {
 type option struct {
 	speed    int
 	unit     string
+	tty      string
 	silent   bool
 	graph    bool
 	filename string
@@ -94,13 +95,14 @@ type option struct {
 
 func getOption() *option {
 	// Todo: split Option parsing
-	//var speed *int = flag.Int("bandwidth", 0, "Bytes Per Sec.")
 	var bw *string = flag.String("bandwidth", "", "Bytes Per Sec.")
+	var tty *string = flag.String("tty", "/dev/tty", "tty device name. default: tty")
 	var silent *bool = flag.Bool("silent", false, "Silent Mode")
 	var graph *bool = flag.Bool("graph", false, "Graphic Mode")
 	var debug *bool = flag.Bool("debug", false, "Debug Mode")
 	flag.Parse()
 
+	// Parse "bandwidth"
 	var speed int
 	var unit string
 	if *bw == "" {
@@ -128,6 +130,11 @@ func getOption() *option {
 			}
 		}
 	}
+	// Parse tty
+	tty_regex := regexp.MustCompile(`^.*/`)
+	tty_device := "/dev/" + tty_regex.ReplaceAllString(*tty, "")
+
+	// debug
 	DEBUG = *debug
 
 	var filename string
@@ -144,6 +151,7 @@ func getOption() *option {
 	return &option{
 		speed:    speed,
 		unit:     unit,
+		tty:      tty_device,
 		silent:   *silent,
 		graph:    *graph,
 		filename: filename,
@@ -343,11 +351,11 @@ type monitor struct {
 	width    int
 }
 
-func getTty() *os.File {
-	device := "/dev/tty"
+func getTty(device string) *os.File {
+	//fmt.Fprintf(os.Stderr, "device:%s\n", device)
 	tty, err := os.Create(device)
 	if err != nil {
-		fmt.Printf("File Open Error device:%s error:%v\n", device, err)
+		fmt.Fprintf(os.Stderr, "File Open Error device:%s error:%v\n", device, err)
 	}
 	return tty
 }
@@ -356,7 +364,6 @@ func newMonitor(ctx context.Context, cancel func(), sk *speedKeeper) *monitor {
 	return &monitor{
 		ctx:      ctx,
 		cancel:   cancel,
-		tty:      getTty(),
 		sk:       sk,
 		progress: make(chan struct{}),
 	}
@@ -368,6 +375,10 @@ func (mon *monitor) setMode(mode string) {
 
 func (mon *monitor) setOption(option *option) {
 	mon.option = option
+}
+
+func (mon *monitor) setTty() {
+	mon.tty = getTty(mon.option.tty)
 }
 
 func (mon *monitor) standardProgress() {
@@ -426,13 +437,17 @@ func (mon *monitor) run() {
 		pFunc = func() {}
 		endFunc = func() {}
 	case "graph":
-		initFunc = func() {}
+		initFunc = func() {
+			mon.setTty()
+		}
 		pFunc = mon.getGraphProgress()
 		endFunc = func() {
 			fmt.Fprintf(mon.tty, "\n")
 		}
 	default:
-		initFunc = func() {}
+		initFunc = func() {
+			mon.setTty()
+		}
 		pFunc = mon.standardProgress
 		endFunc = func() {
 			fmt.Fprintf(mon.tty, "\n")
