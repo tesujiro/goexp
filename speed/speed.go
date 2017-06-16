@@ -32,12 +32,18 @@ const (
 	YB                             // 1 << (10*8)
 )
 
-var BinaryPrefixDict = map[string]float64{
-	"":  1,
-	"K": 1 << 10, "M": 1 << 20, "G": 1 << 30, "T": 1 << 40,
-	"P": 1 << 50, "E": 1 << 60, "Z": 1 << 70, "Y": 1 << 80,
-	"Ki": 1 << 10, "Mi": 1 << 20, "Gi": 1 << 30, "Ti": 1 << 40,
-	"Pi": 1 << 50, "Ei": 1 << 60, "Zi": 1 << 70, "Yi": 1 << 80,
+func BinaryPrefixDict() func(string) ByteSize {
+	dict := map[string]ByteSize{
+		"":  1,
+		"K": 1 << 10, "M": 1 << 20, "G": 1 << 30, "T": 1 << 40,
+		"P": 1 << 50, "E": 1 << 60, "Z": 1 << 70, "Y": 1 << 80,
+	}
+	for k, v := range dict {
+		dict[k+"i"] = v
+	}
+	return func(key string) ByteSize {
+		return dict[key]
+	}
 }
 
 func dprintf(format string, a ...interface{}) {
@@ -131,7 +137,7 @@ func getOption() *option {
 		} else {
 			if len(result[0]) > 2 {
 				unit = result[0][2]
-				speed = i * int(BinaryPrefixDict[unit])
+				speed = i * int(BinaryPrefixDict()(unit))
 			} else {
 				unit = ""
 				speed = i
@@ -410,7 +416,7 @@ func (mon *monitor) standardProgress() {
 		time.Now().Format("2006/01/02 15:04:05.000 MST"),
 		mon.sk.current,
 		p,
-		float64(mon.sk.currentSpeed())/BinaryPrefixDict[mon.option.unit],
+		ByteSize(mon.sk.currentSpeed())/BinaryPrefixDict()(mon.option.unit),
 		mon.option.unit,
 	)
 }
@@ -433,7 +439,7 @@ func (mon *monitor) getGraphProgress() func() {
 			time.Now().Format("2006/01/02 15:04:05.000 MST"),
 			mon.sk.current,
 			p,
-			float64(mon.sk.currentSpeed())/BinaryPrefixDict[mon.option.unit],
+			ByteSize(mon.sk.currentSpeed())/BinaryPrefixDict()(mon.option.unit),
 			mon.option.unit,
 			bar[:int(mon.sk.current*mon.width/mon.sk.size)],
 		)
@@ -486,9 +492,6 @@ L:
 		select {
 		case <-mon.progress:
 			pFunc()
-			//if mon.sk.current == mon.sk.size {
-			//mon.cancel()
-			//}
 		case <-mon.ctx.Done():
 			break L
 		case buf := <-mon.data:
