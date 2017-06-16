@@ -34,13 +34,12 @@ const (
 
 func BinaryPrefixDict() func(string) ByteSize {
 	dict := map[string]ByteSize{
-		"":  1,
-		"K": 1 << 10, "M": 1 << 20, "G": 1 << 30, "T": 1 << 40,
-		"P": 1 << 50, "E": 1 << 60, "Z": 1 << 70, "Y": 1 << 80,
+		"K": KB, "M": MB, "G": GB, "T": TB, "P": PB, "E": EB, "Z": EB, "Y": YB,
 	}
 	for k, v := range dict {
 		dict[k+"i"] = v
 	}
+	dict[""] = 1
 	return func(key string) ByteSize {
 		return dict[key]
 	}
