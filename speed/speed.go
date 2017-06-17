@@ -45,6 +45,38 @@ func BinaryPrefixDict() func(string) ByteSize {
 	}
 }
 
+// inBynaryPrefix(1024) => (1.0,"KB")
+func inBynaryPrefix(d int) (float64, string) {
+	plist := []string{"", "K", "M", "G", "T", "P", "E", "Z", "Y"}
+	for i, p := range plist {
+		if d < int(BinaryPrefixDict()(p)) {
+			return float64(d) / float64(BinaryPrefixDict()(plist[i-1])), plist[i-1]
+		}
+	}
+	return float64(d), ""
+}
+
+// parseBynaryPrefix("1KB") => 1024
+func parseBynaryPrefix(bp string) (int, error) {
+	var size int
+	bp_regex := regexp.MustCompile(`^([\d]+)([[KMGTPEZY]i?]?)?B?$`)
+	result := bp_regex.FindAllStringSubmatch(bp, -1)
+	if len(result) == 0 {
+		return 0, fmt.Errorf("Parse String:%s", bp)
+	}
+	if i, err := strconv.Atoi(result[0][1]); err != nil {
+		return 0, fmt.Errorf("Convert string to number :%s", result[0][1])
+	} else {
+		if len(result[0]) > 2 {
+			unit := result[0][2]
+			size = i * int(BinaryPrefixDict()(unit))
+		} else {
+			size = i
+		}
+	}
+	return size, nil
+}
+
 func dprintf(format string, a ...interface{}) {
 	if DEBUG {
 		fmt.Fprintf(os.Stderr, format, a...)
@@ -72,14 +104,6 @@ func getWidth() uint {
 }
 
 func openfile(filename string) (*os.File, os.FileInfo, error) {
-	/*
-		cur, err := os.Getwd()
-		if err != nil {
-			return nil, nil, err
-		}
-		//filename := flag.Args()[0]
-		filePath := filepath.Join(cur, filename)
-	*/
 	filePath, err := filepath.Abs(filename)
 	if err != nil {
 		return nil, nil, err
@@ -98,7 +122,6 @@ func openfile(filename string) (*os.File, os.FileInfo, error) {
 
 type option struct {
 	speed     int
-	unit      string
 	tty       string
 	silent    bool
 	graph     bool
@@ -117,30 +140,14 @@ func getOption() *option {
 
 	// Parse "bandwidth"
 	var speed int
-	var unit string
 	if *bw == "" {
 		speed = 0
-		unit = "M"
 	} else {
-		bw_regex := regexp.MustCompile(`^([\d]+)([[KMGTPEZY]i?]?)?B?$`)
-		result := bw_regex.FindAllStringSubmatch(*bw, -1)
-		if len(result) == 0 {
-			fmt.Fprintf(os.Stderr, "\n\nParameter Error (bandwidth:%s)\n", *bw)
-			os.Exit(9)
-		}
-		fmt.Printf("*bw=%s\n", *bw)
-		fmt.Printf("result=%v\n", result)
-		if i, err := strconv.Atoi(result[0][1]); err != nil {
-			fmt.Fprintf(os.Stderr, "\n\nParameter Error (bandwidth:%s)\n", *bw)
+		if sp, err := parseBynaryPrefix(*bw); err != nil {
+			fmt.Fprintf(os.Stderr, "\n\nParameter Error (bandwidth:%s) %v\n", *bw, err)
 			os.Exit(9)
 		} else {
-			if len(result[0]) > 2 {
-				unit = result[0][2]
-				speed = i * int(BinaryPrefixDict()(unit))
-			} else {
-				unit = ""
-				speed = i
-			}
+			speed = sp
 		}
 	}
 
@@ -165,7 +172,6 @@ func getOption() *option {
 
 	return &option{
 		speed:     speed,
-		unit:      unit,
 		tty:       tty_device,
 		silent:    *silent,
 		graph:     *graph,
@@ -174,8 +180,12 @@ func getOption() *option {
 	}
 }
 
-func main() {
+func sub(i int) {
+	j, p := inBynaryPrefix(i)
+	fmt.Printf("%v==%v%v\n", i, j, p)
+}
 
+func main() {
 	option := getOption()
 
 	if option.filename == "" {
@@ -411,12 +421,13 @@ func (mon *monitor) standardProgress() {
 	if mon.sk.size > 0 {
 		p = fmt.Sprintf("(%3d%%)", int(mon.sk.current*100/mon.sk.size))
 	}
+	j, bp := inBynaryPrefix(mon.sk.currentSpeed())
 	fmt.Fprintf(mon.tty, "\r\033[K[%s]\t%dBytes%s\t@ %.1f%sBps",
 		time.Now().Format("2006/01/02 15:04:05.000 MST"),
 		mon.sk.current,
 		p,
-		ByteSize(mon.sk.currentSpeed())/BinaryPrefixDict()(mon.option.unit),
-		mon.option.unit,
+		j,
+		bp,
 	)
 }
 
@@ -434,12 +445,13 @@ func (mon *monitor) getGraphProgress() func() {
 			p = fmt.Sprintf("(%3d%%)", int(mon.sk.current*100/mon.sk.size))
 		}
 
+		j, bp := inBynaryPrefix(mon.sk.currentSpeed())
 		fmt.Fprintf(mon.tty, "\r\033[K[%s]\t%dBytes%s\t@ %.1f%sBps\t[%-"+strconv.Itoa(mon.width)+"s]",
 			time.Now().Format("2006/01/02 15:04:05.000 MST"),
 			mon.sk.current,
 			p,
-			ByteSize(mon.sk.currentSpeed())/BinaryPrefixDict()(mon.option.unit),
-			mon.option.unit,
+			j,
+			bp,
 			bar[:int(mon.sk.current*mon.width/mon.sk.size)],
 		)
 	}
