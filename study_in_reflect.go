@@ -101,7 +101,8 @@ func makeFunc1() {
 
 	inType := []reflect.Type{reflect.TypeOf(1)}
 	outType := []reflect.Type{reflect.TypeOf(1)}
-	funcType := reflect.FuncOf(inType, outType, false)
+	isVariadic := false
+	funcType := reflect.FuncOf(inType, outType, isVariadic)
 
 	// func MakeFunc(typ Type, fn func(args []Value) (results []Value)) Value
 	// ==> args must be []reflect.Value
@@ -131,7 +132,8 @@ func makeFunc2() {
 
 	inType := []reflect.Type{reflect.TypeOf(1)}
 	outType := []reflect.Type{reflect.TypeOf(reflect.Value{}), reflect.TypeOf(reflect.Value{})}
-	funcType := reflect.FuncOf(inType, outType, false)
+	isVariadic := false
+	funcType := reflect.FuncOf(inType, outType, isVariadic)
 
 	fn := reflect.MakeFunc(funcType, double)
 
@@ -141,6 +143,7 @@ func makeFunc2() {
 	fmt.Println("\tdouble(123)=", ret[0].Interface(), ret[1].Interface())
 }
 
+/*
 func makeFunc7() {
 	// swap is the implementation passed to MakeFunc.
 	swap := func(in []reflect.Value) []reflect.Value {
@@ -161,3 +164,4 @@ func makeFunc7() {
 	makeSwap(&floatSwap)
 	fmt.Println(floatSwap(2.72, 3.14))
 }
+*/
