@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 )
@@ -9,7 +10,10 @@ func main() {
 	//basic1()
 	//basic2()
 	//basic3()
-	makeFunc()
+	//basic4()
+	//callFunc()
+	makeFunc1()
+	makeFunc2()
 }
 
 func basic1() {
@@ -47,6 +51,8 @@ func basic2() {
 	fmt.Println("ValueOf(i)")
 	fmt.Println("\tType:", reflect.TypeOf(reflect.ValueOf(i)))
 	fmt.Println("\tValue:", reflect.TypeOf(reflect.ValueOf(i)))
+	fmt.Println("\tType():", reflect.ValueOf(i).Type())
+	fmt.Println("\tKind():", reflect.ValueOf(i).Kind())
 }
 
 func basic3() {
@@ -61,35 +67,81 @@ func basic3() {
 	fmt.Println("\tValue:", reflect.ValueOf(a))
 }
 
-func makeFunc() {
-	// swap is the implementation passed to MakeFunc.
-	/*
-		double := func(rv []reflect.Value) []reflect.Value {
-			if rv[0].Kind() != reflect.Int {
-				panic("func param panic!!")
-			}
-			i := rv[0].Interface().(int)
+func basic4() {
+	rvNil := reflect.Value{}
+	fmt.Println("reflect.Value{}")
+	fmt.Println("\tType:", reflect.TypeOf(rvNil))
+	fmt.Println("\tValue:", reflect.ValueOf(rvNil))
+}
 
-			return []reflect.Value{reflect.ValueOf(i * 2)}
-		}
-	*/
-	double := func(i int) int {
-		return i * 2
+func callFunc() {
+	fn := fmt.Println
+	fmt.Println("fmt.Println")
+	fmt.Println("\tType:", reflect.TypeOf(fn))
+	fmt.Println("\tValue:", reflect.ValueOf(fn))
+	fmt.Println("\tKind():", reflect.TypeOf(fn).Kind())
+	fmt.Println("\tNumIn():", reflect.TypeOf(fn).NumIn())
+	fmt.Println("\tIn(0):", reflect.TypeOf(fn).In(0))
+	fmt.Println("\tIsVariadic():", reflect.TypeOf(fn).IsVariadic())
+
+	fnValue := reflect.ValueOf(fn)
+
+	arg1 := reflect.ValueOf("Hello world!")
+	fnValue.Call([]reflect.Value{arg1})
+}
+
+func makeFunc1() {
+	// Function 1 : func(int) int
+	// see below comments
+	double := func(in []reflect.Value) []reflect.Value {
+		i := in[0].Interface().(int)
+
+		return []reflect.Value{reflect.ValueOf(i * 2)}
 	}
 
-	//inType := []reflect.Type{reflect.TypeOf(1)}
-	inType := reflect.TypeOf(1)
-	outType := inType
+	inType := []reflect.Type{reflect.TypeOf(1)}
+	outType := []reflect.Type{reflect.TypeOf(1)}
 	funcType := reflect.FuncOf(inType, outType, false)
 
-	reffn := reflect.MakeFunc(funcType, double)
+	// func MakeFunc(typ Type, fn func(args []Value) (results []Value)) Value
+	// ==> args must be []reflect.Value
+	// ==> return values of func must be []reflect.Value
+	fn := reflect.MakeFunc(funcType, double)
 
 	arg1 := reflect.ValueOf(123)
-	ret := reffn.Call([]reflect.Value{arg1})
-	fmt.Println(ret)
+	ret := fn.Call([]reflect.Value{arg1})
+	fmt.Println("func double(int) int")
+	fmt.Println("\tdouble(123)=", ret[0])
 }
 
 func makeFunc2() {
+	// Function 2 : func(int) (int,error)
+	double := func(in []reflect.Value) []reflect.Value {
+		var errValue reflect.Value
+		var errorType = reflect.ValueOf([]error{nil}).Index(0).Type()
+		var reflectValueErrorNilValue = reflect.ValueOf(reflect.New(errorType).Elem())
+		errValue = reflectValueErrorNilValue
+		if in[0].Kind() != reflect.Int {
+			errValue = reflect.ValueOf(errors.New("1st parameter not int"))
+		}
+		i := in[0].Interface().(int)
+
+		return []reflect.Value{reflect.ValueOf(reflect.ValueOf(i * 2)), reflect.ValueOf(errValue)}
+	}
+
+	inType := []reflect.Type{reflect.TypeOf(1)}
+	outType := []reflect.Type{reflect.TypeOf(reflect.Value{}), reflect.TypeOf(reflect.Value{})}
+	funcType := reflect.FuncOf(inType, outType, false)
+
+	fn := reflect.MakeFunc(funcType, double)
+
+	arg1 := reflect.ValueOf(123)
+	ret := fn.Call([]reflect.Value{arg1})
+	fmt.Println("func double(int) (int,error)")
+	fmt.Println("\tdouble(123)=", ret[0].Interface(), ret[1].Interface())
+}
+
+func makeFunc7() {
 	// swap is the implementation passed to MakeFunc.
 	swap := func(in []reflect.Value) []reflect.Value {
 		return []reflect.Value{in[1], in[0]}
