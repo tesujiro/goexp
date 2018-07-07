@@ -7,16 +7,19 @@ import (
 )
 
 func main() {
-	//basic1()
-	//basic2()
-	//basic3()
-	//basic4()
+	basic1()
+	basic2_meta()
+	basic3_interface()
+	basic4_nil()
+	basic5_error()
+	reverse()
 	//callFunc()
-	makeFunc1()
-	makeFunc2()
+	//makeFunc1()
+	//makeFunc2()
 }
 
 func basic1() {
+	fmt.Println("\n\n== BASIC1 reflect Type & Value ==")
 	i := 1
 	fmt.Println("i int")
 	fmt.Println("\tType:", reflect.TypeOf(i))
@@ -33,7 +36,8 @@ func basic1() {
 	fmt.Println("\tValue:", reflect.ValueOf(s))
 }
 
-func basic2() {
+func basic2_meta() {
+	fmt.Println("\n\n== BASIC2 reflect value of interface{} ==")
 	var k *int
 	fmt.Println("k *int")
 	fmt.Println("\tType:", reflect.TypeOf(k))
@@ -55,7 +59,8 @@ func basic2() {
 	fmt.Println("\tKind():", reflect.ValueOf(i).Kind())
 }
 
-func basic3() {
+func basic3_interface() {
+	fmt.Println("\n\n== BASIC3 reflect value of interface{} ==")
 	var a interface{}
 	fmt.Println("a interface{}")
 	fmt.Println("\tType:", reflect.TypeOf(a))
@@ -67,11 +72,47 @@ func basic3() {
 	fmt.Println("\tValue:", reflect.ValueOf(a))
 }
 
-func basic4() {
+func basic4_nil() {
+	fmt.Println("\n\n== BASIC4 reflect value of nil ==")
 	rvNil := reflect.Value{}
 	fmt.Println("reflect.Value{}")
 	fmt.Println("\tType:", reflect.TypeOf(rvNil))
 	fmt.Println("\tValue:", reflect.ValueOf(rvNil))
+}
+
+func basic5_error() {
+	fmt.Println("\n\n== BASIC5 reflect value of error ==")
+	err := errors.New("error message")
+	fmt.Println("error")
+	fmt.Println("\tType:", reflect.TypeOf(err))
+	fmt.Println("\tValue:", reflect.ValueOf(err))
+}
+
+func reverse() {
+	fmt.Println("\n\n== reverse reflect value ==")
+	rv := reflect.ValueOf(1)
+	fmt.Println("rv: reflect.Value of int 1")
+	fmt.Println("\trv:", rv)
+	fmt.Println("\t\tValue:", reflect.ValueOf(rv))
+	fmt.Println("\t\tType:", reflect.TypeOf(rv))
+	fmt.Println("\trv.Interface():", rv.Interface())
+	fmt.Println("\t\tType:", reflect.TypeOf(rv.Interface()))
+	fmt.Println("\t\tValue:", reflect.ValueOf(rv.Interface()))
+
+	rv = reflect.ValueOf(reflect.ValueOf(1))
+	fmt.Println("rv: reflect.Value of reflect.Value of int 1")
+	fmt.Println("\trv:", rv)
+	fmt.Println("\t\tValue:", reflect.ValueOf(rv))
+	fmt.Println("\t\tType:", reflect.TypeOf(rv))
+	fmt.Println("\trv.Interface():", rv.Interface())
+	fmt.Println("\t\tType:", reflect.TypeOf(rv.Interface()))
+	fmt.Println("\t\tValue:", reflect.ValueOf(rv.Interface()))
+	fmt.Println("\trv.Interface().(reflect.Value):", rv.Interface().(reflect.Value))
+	fmt.Println("\t\tType:", reflect.TypeOf(rv.Interface().(reflect.Value)))
+	fmt.Println("\t\tValue:", reflect.ValueOf(rv.Interface().(reflect.Value)))
+	fmt.Println("\trv.Interface().(reflect.Value).Interface():", rv.Interface().(reflect.Value).Interface())
+	fmt.Println("\t\tType:", reflect.TypeOf(rv.Interface().(reflect.Value).Interface()))
+	fmt.Println("\t\tValue:", reflect.ValueOf(rv.Interface().(reflect.Value).Interface()))
 }
 
 func callFunc() {
