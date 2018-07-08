@@ -7,12 +7,13 @@ import (
 )
 
 func main() {
-	basic1()
-	basic2_meta()
-	basic3_interface()
-	basic4_nil()
-	basic5_error()
-	reverse()
+	//basic1()
+	//basic2_meta()
+	//basic3_interface()
+	//basic4_nil()
+	//basic5_error()
+	basic6_array_slice()
+	//reverse()
 	//callFunc()
 	//makeFunc1()
 	//makeFunc2()
@@ -86,6 +87,18 @@ func basic5_error() {
 	fmt.Println("error")
 	fmt.Println("\tType:", reflect.TypeOf(err))
 	fmt.Println("\tValue:", reflect.ValueOf(err))
+}
+
+func basic6_array_slice() {
+	fmt.Println("\n\n== BASIC5 reflect value of array and slice ==")
+	is := []int{1, 2, 3, 4, 5}
+	fmt.Println("array of int")
+	fmt.Println("\tType:", reflect.TypeOf(is))
+	fmt.Println("\tValue:", reflect.ValueOf(is))
+	fmt.Println("\t\tValue.Interface():", reflect.ValueOf(is).Interface())
+	fmt.Println("\t\tValue.Len():", reflect.ValueOf(is).Len())
+	fmt.Println("\t\tValue.Index(3):", reflect.ValueOf(is).Index(3))
+
 }
 
 func reverse() {
