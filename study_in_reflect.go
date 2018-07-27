@@ -12,9 +12,9 @@ func main() {
 	//basic3_interface()
 	//basic4_nil()
 	//basic5_error()
-	basic6_array_slice()
+	//basic6_array_slice()
 	//reverse()
-	//callFunc()
+	callFunc()
 	//makeFunc1()
 	//makeFunc2()
 }
@@ -141,7 +141,18 @@ func callFunc() {
 	fnValue := reflect.ValueOf(fn)
 
 	arg1 := reflect.ValueOf("Hello world!")
-	fnValue.Call([]reflect.Value{arg1})
+	fmt.Println("\targ1:", arg1)
+	fmt.Println("\t\tType:", reflect.TypeOf(arg1))
+	fmt.Println("\t\tValue:", reflect.ValueOf(arg1))
+	fmt.Printf("\tCall([]reflect.Valuer{arg1}):")
+	result := fnValue.Call([]reflect.Value{arg1})
+	fmt.Println("\tresult:", result)
+	fmt.Println("\t\tType:", reflect.TypeOf(result))
+	fmt.Println("\t\tValue:", reflect.ValueOf(result))
+	resultValue := reflect.ValueOf(result)
+	for i := 0; i < resultValue.Len(); i++ {
+		fmt.Printf("\t\t\t[%d]:%v\t%v\n", i, resultValue.Index(i), resultValue.Index(i).Interface())
+	}
 }
 
 func makeFunc1() {
