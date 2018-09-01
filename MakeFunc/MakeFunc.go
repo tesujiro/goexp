@@ -6,8 +6,12 @@ import (
 )
 
 func main() {
+	//makeFuncAndCallSample1()
+	//makeFuncAndCallSample2()
 	//makeFuncAndCallSample3()
-	makeVariadicFuncAndCallSample1()
+	//makeVariadicFuncAndCallSample1()
+	//makeVariadicFuncAndCallSample2()
+	makeVariadicFuncAndCallSample3()
 }
 
 func makeFuncAndCallSample1() {
@@ -16,10 +20,10 @@ func makeFuncAndCallSample1() {
 
 	// second parameter of MakeFunc
 	addOneVal := func(in []reflect.Value) []reflect.Value {
-		if in[0].Type().Kind() == reflect.Int {
-			return []reflect.Value{reflect.ValueOf(in[0].Interface().(int) + 1)}
+		if in[0].Type().Kind() != reflect.Int {
+			return []reflect.Value{} //ERROR
 		}
-		return []reflect.Value{}
+		return []reflect.Value{reflect.ValueOf(in[0].Interface().(int) + 1)}
 	}
 
 	makeFunc := func(fptr interface{}) {
@@ -55,10 +59,10 @@ func makeFuncAndCallSample2() {
 
 	// second parameter of MakeFunc
 	addOneVal := func(in []reflect.Value) []reflect.Value {
-		if in[0].Type().Kind() == reflect.Int {
-			return []reflect.Value{reflect.ValueOf(in[0].Interface().(int) + 1)}
+		if in[0].Type().Kind() != reflect.Int {
+			return []reflect.Value{}
 		}
-		return []reflect.Value{}
+		return []reflect.Value{reflect.ValueOf(in[0].Interface().(int) + 1)}
 	}
 
 	addOneFuncVal := reflect.MakeFunc(funcType, addOneVal)
@@ -128,14 +132,14 @@ func makeVariadicFuncAndCallSample1() {
 
 	// second parameter of MakeFunc
 	addVal := func(in []reflect.Value) []reflect.Value {
-		if in[0].Kind() == reflect.Slice {
-			result := 0
-			for i := 0; i < in[0].Len(); i++ {
-				result += in[0].Index(i).Interface().(int)
-			}
-			return []reflect.Value{reflect.ValueOf(result)}
+		if in[0].Kind() != reflect.Slice || in[0].Index(0).Type().Kind() != reflect.Int {
+			return []reflect.Value{reflect.ValueOf(0)} // 0: ERROR
 		}
-		return []reflect.Value{reflect.ValueOf(0)}
+		result := 0
+		for i := 0; i < in[0].Len(); i++ {
+			result += in[0].Index(i).Interface().(int)
+		}
+		return []reflect.Value{reflect.ValueOf(result)}
 	}
 
 	makeFunc := func(fptr interface{}) {
@@ -155,4 +159,92 @@ func makeVariadicFuncAndCallSample1() {
 	args := []reflect.Value{reflect.ValueOf(2), reflect.ValueOf(3), reflect.ValueOf(4)}
 	result := addFuncVal.Call(args)
 	fmt.Println(result[0].Int())
+}
+
+func makeVariadicFuncAndCallSample2() {
+	//
+	// FUNCTION: add(...int) int
+	//
+
+	// first parameter of MakeFunc : function interface
+	inType := make([]reflect.Type, 1)
+	outType := make([]reflect.Type, 1)
+	inType[0] = reflect.TypeOf([]int{})               // arg1: int slice
+	outType[0] = reflect.TypeOf(1)                    // 1: int
+	funcType := reflect.FuncOf(inType, outType, true) // true: variadic
+
+	// second parameter of MakeFunc
+	addVal := func(in []reflect.Value) []reflect.Value {
+		if in[0].Kind() != reflect.Slice || in[0].Index(0).Type().Kind() != reflect.Int {
+			return []reflect.Value{reflect.ValueOf(0)} // 0: ERROR
+		}
+		result := 0
+		for i := 0; i < in[0].Len(); i++ {
+			result += in[0].Index(i).Interface().(int)
+		}
+		return []reflect.Value{reflect.ValueOf(result)}
+	}
+
+	addFuncVal := reflect.MakeFunc(funcType, addVal)
+
+	// Call Func : add(10,11,12)
+	args := []reflect.Value{reflect.ValueOf(10), reflect.ValueOf(11), reflect.ValueOf(12)}
+	result := addFuncVal.Call(args)
+	fmt.Println(result[0].Int())
+}
+
+func makeVariadicFuncAndCallSample3() {
+	//
+	// FUNCTION: add(...interface{}) interface{}
+	//
+
+	// first parameter of MakeFunc : function interface
+	inType := make([]reflect.Type, 1)
+	outType := make([]reflect.Type, 1)
+	reflectValueType := reflect.TypeOf(reflect.Value{})
+	inType[0] = reflect.TypeOf([]reflect.Value{})     // []interface{}
+	outType[0] = reflectValueType                     // interface{}
+	funcType := reflect.FuncOf(inType, outType, true) // true: variadic
+
+	// second parameter of MakeFunc
+	addVal := func(in []reflect.Value) []reflect.Value {
+		if in[0].Kind() != reflect.Slice {
+			return []reflect.Value{reflect.ValueOf(reflect.ValueOf("not defined as variadic"))}
+		}
+
+		switch in[0].Index(0).Interface().(reflect.Value).Type().Kind() {
+		case reflect.Int:
+			result_int := 0
+			for i := 0; i < in[0].Len(); i++ {
+				result_int += in[0].Index(i).Interface().(reflect.Value).Interface().(int)
+			}
+			return []reflect.Value{reflect.ValueOf(reflect.ValueOf(result_int))}
+		case reflect.String:
+			result_str := ""
+			for i := 0; i < in[0].Len(); i++ {
+				result_str += in[0].Index(i).Interface().(reflect.Value).Interface().(string)
+			}
+			return []reflect.Value{reflect.ValueOf(reflect.ValueOf(result_str))}
+		default:
+			return []reflect.Value{reflect.ValueOf(reflect.ValueOf("invalid value"))}
+		}
+	}
+
+	AddFuncVal := reflect.MakeFunc(funcType, addVal)
+
+	// Call
+	var args, result []reflect.Value
+	val_val := func(v interface{}) reflect.Value {
+		return reflect.ValueOf(reflect.ValueOf(v))
+	}
+
+	// Call Func : int + int + int
+	args = []reflect.Value{val_val(101), val_val(102), val_val(103)}
+	result = AddFuncVal.Call(args)
+	fmt.Println(result[0].Interface())
+
+	// Call Func : string + string + string
+	args = []reflect.Value{val_val("ABC"), val_val("DEF"), val_val("GHI")}
+	result = AddFuncVal.Call(args)
+	fmt.Println(result[0].Interface())
 }
