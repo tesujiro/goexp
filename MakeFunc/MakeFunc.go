@@ -6,7 +6,8 @@ import (
 )
 
 func main() {
-	makeFuncAndCallSample3()
+	//makeFuncAndCallSample3()
+	makeVariadicFuncAndCallSample1()
 }
 
 func makeFuncAndCallSample1() {
@@ -119,4 +120,39 @@ func makeFuncAndCallSample3() {
 	args = []reflect.Value{val_val("abc"), val_val("def")}
 	result = PlusFuncVal.Call(args)
 	fmt.Println(result[0].Interface())
+}
+
+func makeVariadicFuncAndCallSample1() {
+	// first parameter of MakeFunc
+	var add func(...int) int
+
+	// second parameter of MakeFunc
+	addVal := func(in []reflect.Value) []reflect.Value {
+		if in[0].Kind() == reflect.Slice {
+			result := 0
+			for i := 0; i < in[0].Len(); i++ {
+				result += in[0].Index(i).Interface().(int)
+			}
+			return []reflect.Value{reflect.ValueOf(result)}
+		}
+		return []reflect.Value{reflect.ValueOf(0)}
+	}
+
+	makeFunc := func(fptr interface{}) {
+		fn := reflect.ValueOf(fptr).Elem()
+		v := reflect.MakeFunc(fn.Type(), addVal)
+		fn.Set(v)
+	}
+	makeFunc(&add)
+
+	// At first, call the func directly
+	fmt.Println(add(1, 2, 3))
+
+	// Convert func to reflect.Value
+	addFuncVal := reflect.ValueOf(add)
+
+	// Call Func
+	args := []reflect.Value{reflect.ValueOf(2), reflect.ValueOf(3), reflect.ValueOf(4)}
+	result := addFuncVal.Call(args)
+	fmt.Println(result[0].Int())
 }
