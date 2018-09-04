@@ -11,7 +11,10 @@ func main() {
 	//makeFuncAndCallSample3()
 	//makeVariadicFuncAndCallSample1()
 	//makeVariadicFuncAndCallSample2()
-	makeVariadicFuncAndCallSample3()
+	//makeVariadicFuncAndCallSample3()
+	//callGoFuncByReflect1()
+	//callGoFuncByReflect2()
+	callGoFuncByReflect3()
 }
 
 func makeFuncAndCallSample1() {
@@ -246,5 +249,51 @@ func makeVariadicFuncAndCallSample3() {
 	// Call Func : string + string + string
 	args = []reflect.Value{val_val("ABC"), val_val("DEF"), val_val("GHI")}
 	result = AddFuncVal.Call(args)
+	fmt.Println(result[0].Interface())
+}
+
+func callGoFuncByReflect1() {
+	FuncVal := reflect.ValueOf(fmt.Println)
+
+	// Call
+	var args, result []reflect.Value
+	val_val := func(v interface{}) reflect.Value {
+		return reflect.ValueOf(reflect.ValueOf(v))
+	}
+
+	// Call Func : string + string + string
+	args = []reflect.Value{val_val("ABC"), val_val("DEF"), val_val("GHI")}
+	result = FuncVal.Call(args)
+	fmt.Println(result[0].Interface())
+}
+
+func callGoFuncByReflect2() {
+	FuncVal := reflect.ValueOf(fmt.Printf)
+
+	// Call
+	var args, result []reflect.Value
+	val_val := func(v interface{}) reflect.Value {
+		return reflect.ValueOf(reflect.ValueOf(v))
+	}
+
+	// Call Func : string + string + string
+	args = []reflect.Value{reflect.ValueOf("%v:%v\n"), val_val("DEF"), val_val("GHI")}
+	result = FuncVal.Call(args)
+	fmt.Println(result[0].Interface())
+}
+
+func callGoFuncByReflect3() {
+	addInt := func(args ...int) int {
+		var result int
+		for _, v := range args {
+			result += v
+		}
+		return result
+	}
+	FuncVal := reflect.ValueOf(addInt)
+	// Call
+	var args, result []reflect.Value
+	args = []reflect.Value{reflect.ValueOf(123), reflect.ValueOf(456)}
+	result = FuncVal.Call(args)
 	fmt.Println(result[0].Interface())
 }
