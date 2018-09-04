@@ -14,7 +14,8 @@ func main() {
 	//makeVariadicFuncAndCallSample3()
 	//callGoFuncByReflect1()
 	//callGoFuncByReflect2()
-	callGoFuncByReflect3()
+	//callGoFuncByReflect3()
+	makeFuncWithPtrArgsAndCallSample1()
 }
 
 func makeFuncAndCallSample1() {
@@ -296,4 +297,49 @@ func callGoFuncByReflect3() {
 	args = []reflect.Value{reflect.ValueOf(123), reflect.ValueOf(456)}
 	result = FuncVal.Call(args)
 	fmt.Println(result[0].Interface())
+}
+
+func makeFuncWithPtrArgsAndCallSample1() {
+	// first parameter of MakeFunc
+	var swap func(*int, *int)
+
+	// second parameter of MakeFunc
+	swapVal := func(in []reflect.Value) []reflect.Value {
+		if in[0].Type().Kind() != reflect.Ptr {
+			return []reflect.Value{} //ERROR
+		}
+		fmt.Printf("0:%#v\n", in[0].Elem())
+		fmt.Printf("1:%#v\n", in[1].Elem())
+		fmt.Printf("0:type %v\n", in[0].Elem().Type())
+		fmt.Printf("1:type %v\n", in[1].Elem().Type())
+		v0 := in[0].Elem()
+		v1 := in[1].Elem()
+		in[0].Elem().Set(v1)
+		in[1].Elem().Set(v0)
+		//return []reflect.Value{reflect.ValueOf(in[0].Interface().(int) + 1)}
+		return nil
+	}
+
+	makeFunc := func(fptr interface{}) {
+		fn := reflect.ValueOf(fptr).Elem()
+		v := reflect.MakeFunc(fn.Type(), swapVal)
+		fn.Set(v)
+	}
+	makeFunc(&swap)
+
+	// At first, call the func directly
+	a, b := 1, 2
+	fmt.Println("a:", a, " b:", b)
+	swap(&a, &b)
+	fmt.Println("a:", a, " b:", b)
+
+	/*
+		// Convert func to reflect.Value
+		addOneFuncVal := reflect.ValueOf(addOne)
+
+		// Call Func
+		args := []reflect.Value{reflect.ValueOf(2)}
+		result := addOneFuncVal.Call(args)
+		fmt.Println(result[0].Int())
+	*/
 }
