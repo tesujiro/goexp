@@ -308,15 +308,10 @@ func makeFuncWithPtrArgsAndCallSample1() {
 		if in[0].Type().Kind() != reflect.Ptr {
 			return []reflect.Value{} //ERROR
 		}
-		fmt.Printf("0:%#v\n", in[0].Elem())
-		fmt.Printf("1:%#v\n", in[1].Elem())
-		fmt.Printf("0:type %v\n", in[0].Elem().Type())
-		fmt.Printf("1:type %v\n", in[1].Elem().Type())
-		v0 := in[0].Elem()
-		v1 := in[1].Elem()
-		in[0].Elem().Set(v1)
-		in[1].Elem().Set(v0)
-		//return []reflect.Value{reflect.ValueOf(in[0].Interface().(int) + 1)}
+		v0 := in[0].Elem().Interface()
+		v1 := in[1].Elem().Interface()
+		in[0].Elem().Set(reflect.ValueOf(v1))
+		in[1].Elem().Set(reflect.ValueOf(v0))
 		return nil
 	}
 
@@ -333,13 +328,13 @@ func makeFuncWithPtrArgsAndCallSample1() {
 	swap(&a, &b)
 	fmt.Println("a:", a, " b:", b)
 
-	/*
-		// Convert func to reflect.Value
-		addOneFuncVal := reflect.ValueOf(addOne)
+	// Convert func to reflect.Value
+	swapFuncVal := reflect.ValueOf(swap)
 
-		// Call Func
-		args := []reflect.Value{reflect.ValueOf(2)}
-		result := addOneFuncVal.Call(args)
-		fmt.Println(result[0].Int())
-	*/
+	// Call Func
+	c, d := 3, 4
+	fmt.Println("c:", c, " d:", d)
+	args := []reflect.Value{reflect.ValueOf(&c), reflect.ValueOf(&d)}
+	swapFuncVal.Call(args)
+	fmt.Println("c:", c, " d:", d)
 }
