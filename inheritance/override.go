@@ -2,22 +2,32 @@ package main
 
 import "fmt"
 
-type printable interface {
+type overridable interface {
 	print()
 }
 
+/*
+type override struct {
+	ov overridable
+}
+*/
+
 type parent struct {
-	p_interface printable
+	override overridable
 }
 
 func NewParent() *parent {
 	p := &parent{}
-	p.p_interface = p
+	//p.override = p
 	return p
 }
 
 func (p *parent) do() {
-	p.p_interface.print()
+	if p.override != nil {
+		p.override.print()
+	} else {
+		p.print()
+	}
 }
 
 func (p *parent) print() {
@@ -31,7 +41,7 @@ type child struct {
 
 func NewChild() *child {
 	p := &child{}
-	p.p_interface = p
+	p.override = p
 	return p
 }
 
