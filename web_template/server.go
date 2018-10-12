@@ -23,6 +23,7 @@ func main() {
 
 func (s *server) routes() {
 	s.router.HandleFunc("/greet", s.handleHello())
+	s.router.Handle("/static", http.StripPrefix("/static", http.FileServer(http.Dir("public"))))
 }
 
 func (s *server) handleHello() http.HandlerFunc {
