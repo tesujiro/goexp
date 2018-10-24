@@ -5,6 +5,9 @@ import (
 	"time"
 )
 
+// for testing purpose now func can be altered inside this package
+var now func() time.Time = time.Now
+
 type Period struct {
 	from time.Time
 	to   time.Time
@@ -15,8 +18,9 @@ func NewPeriod(from, to time.Time) *Period {
 	return &Period{from: from, to: to}
 }
 
-func (p *Period) duringThePeriod(t time.Time) bool {
-	return (p.from.Before(t) || p.from.Equal(t)) && (p.to.After(t) || p.to.Equal(t))
+func (p *Period) duringThePeriod() bool {
+	now:=now()
+	return (p.from.Before(now) || p.from.Equal(now)) && (p.to.After(now) || p.to.Equal(now))
 }
 
 func main() {

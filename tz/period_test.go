@@ -37,20 +37,23 @@ func TestPeriod(t *testing.T) {
 		twoHourAfter_loc2 := now_loc2.Add(2 * time.Hour)
 	*/
 
+	//camp1_us_from :=time.Date(2014, time.December, 31, 12, 13, 24, 0, time.UTC)
+
 	cases := []struct {
 		location *time.Location
 		from, to time.Time
-		now      time.Time
+		nowFunc      func() time.Time
 		during   bool
 	}{
-		{location: loc1, now: now_loc1, from: twoHourBefore_loc1, to: oneHourBefore_loc1, during: false},
-		{location: loc1, now: now_loc1, from: oneHourBefore_loc1, to: oneHourAfter_loc1, during: true},
+		{location: loc1, nowFunc: time.Now, from: twoHourBefore_loc1, to: oneHourBefore_loc1, during: false},
+		{location: loc1, nowFunc: time.Now, from: oneHourBefore_loc1, to: oneHourAfter_loc1, during: true},
 	}
 
 	for _, c := range cases {
+		now = c.nowFunc
 		time.Local = c.location
 		p := NewPeriod(c.from, c.to)
-		during := p.duringThePeriod(c.now)
+		during := p.duringThePeriod()
 		if during != c.during {
 			t.Errorf("received: %v - expected: %v - case: %v", during, c.during, c)
 		}
