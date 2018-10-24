@@ -33,4 +33,6 @@ func main() {
 	print(2000)
 	*sub(100) = 200
 	print(100)
+	//sub(100) = nil
+	print(100)
 }
