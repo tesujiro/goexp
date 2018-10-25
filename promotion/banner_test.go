@@ -68,7 +68,7 @@ func TestPromotion(t *testing.T) {
 		{now: time.Date(2018, time.September, 30, 10, 59, 59, 0, loc_newyork), request: req_local, banner: ""},
 		// campaign 1 started
 		{now: time.Date(2018, time.October, 01, 00, 00, 0, 0, loc_tokyo), request: req_local, banner: "<some>CAMPAIGN 1</some>"},
-		{now: time.Date(2018, time.October, 30, 11, 00, 0, 0, loc_newyork), request: req_local, banner: "<some>CAMPAIGN 1</some>"},
+		{now: time.Date(2018, time.September, 30, 11, 00, 0, 0, loc_newyork), request: req_local, banner: "<some>CAMPAIGN 1</some>"},
 		// campaign 1 expired
 		{now: time.Date(2018, time.October, 14, 00, 00, 0, 1, loc_tokyo), request: req_local, banner: "<some>CAMPAIGN 2</some>"},
 		//{now: time.Date(2018, time.October, 30, 11, 00, 0, 0, loc_newyork), request: req_local, banner: "<some>CAMPAIGN 1</some>"},
