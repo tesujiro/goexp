@@ -81,6 +81,7 @@ func TestPromotion(t *testing.T) {
 	}
 	list()
 
+	num := 1
 	for _, c := range tests {
 		now = func() time.Time { return c.now }
 		banner, err := Banner(c.request)
@@ -89,7 +90,8 @@ func TestPromotion(t *testing.T) {
 		}
 		fmt.Printf("now=%v banner=%v\n", now(), banner)
 		if c.banner != banner {
-			t.Errorf("received: %v - expected: %v - case: %v", banner, c.banner, c)
+			t.Errorf("case:%v received: %v - expected: %v - case: %v", num, banner, c.banner, c)
 		}
+		num++
 	}
 }
