@@ -2,12 +2,13 @@ package promotion
 
 import (
 	"fmt"
+	"math/rand"
 	"net/http"
 	"testing"
 	"time"
 )
 
-func TestPromotion(t *testing.T) {
+func TestCampaignPeriod(t *testing.T) {
 	loc_tokyo, err := time.LoadLocation("Asia/Tokyo")
 	if err != nil {
 		t.Fatalf("LoadLocation loc1 failed:%v\n", err)
@@ -34,7 +35,8 @@ func TestPromotion(t *testing.T) {
 		{name: "CAMPAIGN2", from: camp2_fr, to: camp2_to, banner: "<some>CAMPAIGN 2</some>"},
 	}
 
-	for _, camp := range camps {
+	for i, camp := range camps {
+		t.Logf("promotion:%v\t%v(%v-%v) banner:%v", i, camp.name, camp.from, camp.to, camp.banner)
 		err := NewCampaign(camp.name, camp.from, camp.to, camp.banner).Add()
 		if err != nil {
 			t.Fatalf("add campaign failed: %v", err)
@@ -75,10 +77,10 @@ func TestPromotion(t *testing.T) {
 		{now: time.Date(2018, time.October, 22, 07, 00, 0, 1, loc_tokyo), request: req_local, banner: ""},
 		{now: time.Date(2018, time.October, 21, 18, 00, 0, 1, loc_newyork), request: req_local, banner: ""},
 	}
-	list()
+	//list()
 
-	num := 1
-	for _, c := range tests {
+	for i, c := range tests {
+		t.Logf("test case:%v\tnow:%v", i, c.now)
 		now = func() time.Time { return c.now }
 		banner, err := Banner(c.request)
 		if err != nil {
@@ -86,8 +88,46 @@ func TestPromotion(t *testing.T) {
 		}
 		//fmt.Printf("now=%v banner=%v\n", now(), banner)
 		if c.banner != banner {
-			t.Errorf("case:%v received: %v - expected: %v - case: %v", num, banner, c.banner, c)
+			t.Errorf("case:%v received: %v - expected: %v - case: %v", i, banner, c.banner, c)
 		}
-		num++
 	}
+}
+
+func BenchmarkBanner(b *testing.B) {
+	benchBanner(b, 100)
+	benchBanner(b, 10000)
+	benchBanner(b, 100000)
+}
+
+func benchBanner(b *testing.B, camps int) {
+	randPeriod := func() (start, end time.Time) {
+		start = time.Date(2018, time.October, rand.Intn(30), rand.Intn(24), 0, 0, 0, time.UTC)
+		end = start.Add(time.Duration(rand.Intn(30*24)) * time.Hour)
+		return
+	}
+	randTime := func() time.Time {
+		return time.Date(2018, time.October, rand.Intn(60), rand.Intn(24), rand.Intn(60), 0, 0, time.UTC)
+	}
+	b.Run(fmt.Sprintf("%vCampaigns", camps), func(b *testing.B) {
+		for i := 0; i < camps; i++ {
+			from, to := randPeriod()
+			err := NewCampaign(fmt.Sprintf("Camp%v", i), from, to, fmt.Sprintf("<some>Camp %v</some>", i)).Add()
+			if err != nil {
+				b.Fatalf("add campaign failed: %v", err)
+			}
+		}
+		req_local, err := http.NewRequest("GET", "dummy", nil)
+		if err != nil {
+			b.Fatalf("NewRequest error:%v\n", err)
+		}
+		now = func() time.Time { return randTime() }
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			banner, err := Banner(req_local)
+			if err != nil {
+				b.Fatalf("Banner func failed:%v\n", err)
+			}
+			_ = banner
+		}
+	})
 }
