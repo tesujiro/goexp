@@ -83,11 +83,11 @@ func TestPromotion(t *testing.T) {
 
 	for _, c := range tests {
 		now = func() time.Time { return c.now }
-		fmt.Printf("now=%v banner=%v\n", now(), Banner(c.request))
-		//if during != c.during {
-		//t.Errorf("received: %v - expected: %v - case: %v", during, c.during, c)
-		//}
-		banner := Banner(c.request)
+		banner, err := Banner(c.request)
+		if err != nil {
+			t.Fatalf("Banner func failed:%v\n", err)
+		}
+		fmt.Printf("now=%v banner=%v\n", now(), banner)
 		if c.banner != banner {
 			t.Errorf("received: %v - expected: %v - case: %v", banner, c.banner, c)
 		}

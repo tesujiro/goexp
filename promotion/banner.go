@@ -65,7 +65,7 @@ func list() []Campaign {
 
 var now = time.Now
 
-func Banner(r *http.Request) string {
+func Banner(r *http.Request) (string, error) {
 	var banner string
 	n := now()
 	for _, c := range campaigns {
@@ -74,5 +74,5 @@ func Banner(r *http.Request) string {
 			banner = banner + c.banner
 		}
 	}
-	return banner
+	return banner, nil
 }
