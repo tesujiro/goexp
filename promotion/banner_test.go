@@ -51,7 +51,10 @@ func TestPromotion(t *testing.T) {
 	}
 
 	for _, camp := range camps {
-		NewCampaign(camp.name, camp.from, camp.to, camp.banner).Add()
+		err := NewCampaign(camp.name, camp.from, camp.to, camp.banner).Add()
+		if err != nil {
+			t.Fatalf("add campaign failed: %v", err)
+		}
 	}
 
 	req_local, err := http.NewRequest("GET", "dummy", nil)

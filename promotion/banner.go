@@ -34,8 +34,16 @@ func NewCampaign(name string, start, end time.Time, banner string) *Campaign {
 	}
 }
 
-func (c *Campaign) Add() {
+func (c *Campaign) Add() error {
+	if c.startAt.After(c.expiresAt) {
+		return fmt.Errorf("error: start date is after expire date.")
+	}
+	if c.banner == "" {
+		return fmt.Errorf("error: banner is not set.")
+	}
+
 	campaigns = append(campaigns, *c)
+	return nil
 }
 
 func (c *Campaign) duringThePeriod(t time.Time) bool {
