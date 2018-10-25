@@ -17,22 +17,6 @@ func TestPromotion(t *testing.T) {
 		t.Fatalf("LoadLocation loc1 failed:%v\n", err)
 	}
 
-	/*
-		loc1, err := time.LoadLocation("Asia/Tokyo")
-		if err != nil {
-			t.Fatalf("LoadLocation loc1 failed:%v\n", err)
-		}
-				loc2, err := time.LoadLocation("America/New_York")
-				if err != nil {
-					t.Fatalf("LoadLocation loc2 failed:%v\n", err)
-				}
-
-			utc, err := time.LoadLocation("UTC")
-			if err != nil {
-				t.Fatalf("LoadLocation utc failed:%v\n", err)
-			}
-	*/
-
 	// CAMPAIGN1   2018/10/01 00:00 JP - 2018/10/14 00:00 JP
 	camp1_fr := time.Date(2018, time.October, 01, 0, 0, 0, 0, loc_tokyo)
 	camp1_to := time.Date(2018, time.October, 14, 0, 0, 0, 0, loc_tokyo)
@@ -72,9 +56,21 @@ func TestPromotion(t *testing.T) {
 		// campaign 1 started
 		{now: time.Date(2018, time.October, 01, 00, 00, 0, 0, loc_tokyo), request: req_local, banner: "<some>CAMPAIGN 1</some>"},
 		{now: time.Date(2018, time.September, 30, 11, 00, 0, 0, loc_newyork), request: req_local, banner: "<some>CAMPAIGN 1</some>"},
+		// before campaign 2 start
+		{now: time.Date(2018, time.October, 07, 21, 59, 59, 999, loc_tokyo), request: req_local, banner: "<some>CAMPAIGN 1</some>"},
+		{now: time.Date(2018, time.October, 07, 8, 59, 59, 999, loc_newyork), request: req_local, banner: "<some>CAMPAIGN 1</some>"},
+		// campaign 2 start
+		{now: time.Date(2018, time.October, 07, 22, 00, 0, 0, loc_tokyo), request: req_local, banner: "<some>CAMPAIGN 1</some>"},
+		{now: time.Date(2018, time.October, 07, 9, 00, 0, 0, loc_newyork), request: req_local, banner: "<some>CAMPAIGN 1</some>"},
+		// campaign 1 last moment
+		{now: time.Date(2018, time.October, 14, 00, 00, 0, 0, loc_tokyo), request: req_local, banner: "<some>CAMPAIGN 1</some>"},
+		{now: time.Date(2018, time.October, 13, 11, 00, 0, 0, loc_newyork), request: req_local, banner: "<some>CAMPAIGN 1</some>"},
 		// campaign 1 expired
 		{now: time.Date(2018, time.October, 14, 00, 00, 0, 1, loc_tokyo), request: req_local, banner: "<some>CAMPAIGN 2</some>"},
-		{now: time.Date(2018, time.October, 30, 11, 00, 0, 0, loc_newyork), request: req_local, banner: "<some>CAMPAIGN 2</some>"},
+		{now: time.Date(2018, time.October, 13, 11, 00, 0, 1, loc_newyork), request: req_local, banner: "<some>CAMPAIGN 2</some>"},
+		// before campaign 2 expires
+		{now: time.Date(2018, time.October, 22, 07, 00, 0, 0, loc_tokyo), request: req_local, banner: "<some>CAMPAIGN 2</some>"},
+		{now: time.Date(2018, time.October, 21, 18, 00, 0, 0, loc_newyork), request: req_local, banner: "<some>CAMPAIGN 2</some>"},
 		// after campaigns
 		{now: time.Date(2018, time.October, 22, 07, 00, 0, 1, loc_tokyo), request: req_local, banner: ""},
 		{now: time.Date(2018, time.October, 21, 18, 00, 0, 1, loc_newyork), request: req_local, banner: ""},
@@ -88,7 +84,7 @@ func TestPromotion(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Banner func failed:%v\n", err)
 		}
-		fmt.Printf("now=%v banner=%v\n", now(), banner)
+		//fmt.Printf("now=%v banner=%v\n", now(), banner)
 		if c.banner != banner {
 			t.Errorf("case:%v received: %v - expected: %v - case: %v", num, banner, c.banner, c)
 		}

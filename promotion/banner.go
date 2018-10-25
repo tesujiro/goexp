@@ -67,11 +67,14 @@ var now = time.Now
 
 func Banner(r *http.Request) (string, error) {
 	var banner string
+	var expiresAt time.Time
 	n := now()
 	for _, c := range campaigns {
 		if c.duringThePeriod(n) {
-			//fmt.Printf("Banner Campaign:%v\n", c.name)
-			banner = banner + c.banner
+			if expiresAt.IsZero() || c.expiresAt.Before(expiresAt) {
+				expiresAt = c.expiresAt
+				banner = c.banner
+			}
 		}
 	}
 	return banner, nil
