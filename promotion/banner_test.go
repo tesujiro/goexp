@@ -10,56 +10,11 @@ import (
 )
 
 // truncate campaigns for testing
-// TODO: truncate -> truncateCampaigns
-func truncate() {
-	campaigns = make([]Campaign, 0)
+func truncateCampaigns() {
+	campaigns = make([]campaign, 0)
 }
 
-func list() []Campaign {
-	cs := make([]Campaign, 0)
-	for _, c := range campaigns {
-		cs = append(cs, c)
-		fmt.Printf("campaign:%v\n", c)
-	}
-	return cs
-}
-
-// Return number of campaigns for testing
-//func countCampaigns() int {
-//return len(campaigns)
-//}
-
-func TestConcurrentAddCampaign(t *testing.T) {
-	conc := 10000 // Concurrency
-	camp_fr := time.Date(2018, time.October, 01, 0, 0, 0, 0, time.UTC)
-	camp_to := time.Date(2018, time.October, 14, 0, 0, 0, 0, time.UTC)
-	t.Logf("adding camaigns (concurrency:%v)", conc)
-	wg := &sync.WaitGroup{}
-	for i := 0; i < conc; i++ {
-		wg.Add(1)
-		go func() {
-			err := NewCampaign(
-				fmt.Sprintf("Camp%v", i),
-				camp_fr,
-				camp_to,
-				fmt.Sprintf("Camp%v", i),
-			).Add()
-			if err != nil {
-				t.Fatalf("add campaign failed: %v", err)
-			}
-
-			wg.Done()
-		}()
-	}
-	wg.Wait()
-
-	count := len(campaigns)
-	if count != conc {
-		t.Errorf("campaigns number:%v - expected: %v ", count, conc)
-	}
-	truncate()
-}
-
+//TODO: move method
 func setCampaignsCase1(t *testing.T) {
 	loc_tokyo, err := time.LoadLocation("Asia/Tokyo")
 	if err != nil {
@@ -82,19 +37,24 @@ func setCampaignsCase1(t *testing.T) {
 		name     string
 		from, to time.Time
 		banner   string
+		current  time.Time //TODO: another TestAddCampaign??
+		added    bool
 	}{
 		{name: "CAMPAIGN2", from: camp2_fr, to: camp2_to, banner: "<some>CAMPAIGN 2</some>"},
 		{name: "CAMPAIGN1", from: camp1_fr, to: camp1_to, banner: "<some>CAMPAIGN 1</some>"},
 	}
 
+	truncateCampaigns()
 	for i, camp := range camps {
 		t.Logf("promotion:%v\t%v( %v - %v ) banner:%v", i, camp.name, camp.from, camp.to, camp.banner)
-		err := NewCampaign(camp.name, camp.from, camp.to, camp.banner).Add()
+		err := AddCampaign(camp.name, camp.from, camp.to, camp.banner)
 		if err != nil {
 			t.Fatalf("add campaign failed: %v", err)
 		}
 	}
-	list()
+	for _, c := range campaigns {
+		fmt.Printf("campaign:%v\n", c)
+	}
 }
 
 func TestCampaignPeriod(t *testing.T) {
@@ -180,13 +140,47 @@ func TestCampaignPeriod(t *testing.T) {
 			t.Errorf("case:%v received: %v - expected: %v - case: %v", i, banner, c.banner, c)
 		}
 	}
-	truncate()
 }
 
+// Test conflicts while adding campaigns
+func TestConcurrentAddCampaign(t *testing.T) {
+	truncateCampaigns()
+	conc := 10000 // Concurrency
+	camp_fr := time.Date(2018, time.October, 01, 0, 0, 0, 0, time.UTC)
+	camp_to := time.Date(2018, time.October, 14, 0, 0, 0, 0, time.UTC)
+	t.Logf("adding camaigns (concurrency:%v)", conc)
+	wg := &sync.WaitGroup{}
+	for i := 0; i < conc; i++ {
+		wg.Add(1)
+		go func() {
+			err := AddCampaign(
+				fmt.Sprintf("Camp%v", i),
+				camp_fr,
+				camp_to,
+				fmt.Sprintf("Camp%v", i),
+			)
+			if err != nil {
+				t.Fatalf("add campaign failed: %v", err)
+			}
+
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+
+	count := len(campaigns)
+	if count != conc {
+		t.Errorf("campaigns number:%v - expected: %v ", count, conc)
+	}
+	truncateCampaigns()
+}
+
+// Benchmark banner performance while if number of campaigns is increased.
 func BenchmarkBanner(b *testing.B) {
+	benchBanner(b, 10)
 	benchBanner(b, 100)
+	benchBanner(b, 1000)
 	benchBanner(b, 10000)
-	//benchBanner(b, 100000)
 }
 
 func benchBanner(b *testing.B, camps int) {
@@ -198,20 +192,30 @@ func benchBanner(b *testing.B, camps int) {
 	randTime := func() time.Time {
 		return time.Date(2018, time.October, rand.Intn(60), rand.Intn(24), rand.Intn(60), 0, 0, time.UTC)
 	}
+
 	b.Run(fmt.Sprintf("%vCampaigns", camps), func(b *testing.B) {
+		truncateCampaigns()
+
+		// Add Campaigns
 		for i := 0; i < camps; i++ {
 			from, to := randPeriod()
-			err := NewCampaign(fmt.Sprintf("Camp%v", i), from, to, fmt.Sprintf("<some>Camp %v</some>", i)).Add()
+			err := AddCampaign(fmt.Sprintf("Camp%v", i), from, to, fmt.Sprintf("<some>Camp %v</some>", i))
 			if err != nil {
 				b.Fatalf("add campaign failed: %v", err)
 			}
 		}
+
+		// Request from user not admin.
 		ReqFromUser, err := http.NewRequest("GET", "dummy", nil)
 		if err != nil {
 			b.Fatalf("NewRequest error:%v\n", err)
 		}
 		ReqFromUser.RemoteAddr = "127.0.0.1:12345"
+
+		// current time is at random
 		nowFunc = func() time.Time { return randTime() }
+
+		// Benchmark start
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			banner, err := Banner(ReqFromUser)
