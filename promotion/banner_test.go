@@ -63,8 +63,8 @@ func setCampaignsCase1(t *testing.T) {
 		from, to time.Time
 		banner   string
 	}{
-		{name: "CAMPAIGN1", from: camp1_fr, to: camp1_to, banner: "<some>CAMPAIGN 1</some>"},
 		{name: "CAMPAIGN2", from: camp2_fr, to: camp2_to, banner: "<some>CAMPAIGN 2</some>"},
+		{name: "CAMPAIGN1", from: camp1_fr, to: camp1_to, banner: "<some>CAMPAIGN 1</some>"},
 	}
 
 	for i, camp := range camps {
@@ -74,6 +74,7 @@ func setCampaignsCase1(t *testing.T) {
 			t.Fatalf("add campaign failed: %v", err)
 		}
 	}
+	list()
 }
 
 func TestCampaignPeriod(t *testing.T) {
@@ -149,7 +150,7 @@ func TestCampaignPeriod(t *testing.T) {
 
 	for i, c := range tests {
 		t.Logf("test case:%v\tnow:%v", i, c.now)
-		now = func() time.Time { return c.now }
+		nowFunc = func() time.Time { return c.now }
 		banner, err := Banner(c.request)
 		if err != nil {
 			t.Fatalf("Banner func failed:%v\n", err)
@@ -165,7 +166,7 @@ func TestCampaignPeriod(t *testing.T) {
 func BenchmarkBanner(b *testing.B) {
 	benchBanner(b, 100)
 	benchBanner(b, 10000)
-	benchBanner(b, 100000)
+	//benchBanner(b, 100000)
 }
 
 func benchBanner(b *testing.B, camps int) {
@@ -190,7 +191,7 @@ func benchBanner(b *testing.B, camps int) {
 			b.Fatalf("NewRequest error:%v\n", err)
 		}
 		ReqFromUser.RemoteAddr = "127.0.0.1:12345"
-		now = func() time.Time { return randTime() }
+		nowFunc = func() time.Time { return randTime() }
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			banner, err := Banner(ReqFromUser)
