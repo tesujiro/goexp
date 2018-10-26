@@ -15,7 +15,10 @@ type Campaign struct {
 	banner    string
 }
 
+// all the campaigns
 var campaigns []Campaign
+
+// for lock while adding new campaigns
 var mu *sync.Mutex
 
 func init() {
@@ -23,6 +26,7 @@ func init() {
 	mu = new(sync.Mutex)
 }
 
+// Administrators IP addresses
 var ipAddrList = []net.IP{
 	net.IPv4(10, 0, 0, 1),
 	net.IPv4(10, 0, 0, 2),
@@ -52,6 +56,7 @@ func getIPFromRequest(req *http.Request) (net.IP, error) {
 	return userIP, nil
 }
 
+// Check the request from administrator(s)
 func isFromAdmin(req *http.Request) (bool, error) {
 	ip, err := getIPFromRequest(req)
 	if err != nil {
@@ -69,6 +74,7 @@ func (b by) Sort(cs []Campagin) {
 }
 */
 
+// Return a new Campaign struct
 func NewCampaign(name string, start, end time.Time, banner string) *Campaign {
 	return &Campaign{
 		name:      name,
@@ -78,6 +84,7 @@ func NewCampaign(name string, start, end time.Time, banner string) *Campaign {
 	}
 }
 
+// TODO: Campaign -> AddCampaign  ????
 func (c *Campaign) Add() error {
 	if c.startAt.After(c.expiresAt) {
 		return fmt.Errorf("error: start date is after expire date.")
@@ -98,6 +105,7 @@ func (c *Campaign) duringThePeriod(t time.Time) bool {
 }
 
 // truncate campaigns for testing
+// TODO: truncate -> truncateCampaigns
 func truncate() {
 	campaigns = make([]Campaign, 0)
 }
@@ -113,13 +121,14 @@ func list() []Campaign {
 }
 */
 
-// number of campaigns for testing
+// Return number of campaigns for testing
 func countCampaigns() int {
 	return len(campaigns)
 }
 
 var now = time.Now
 
+// TODO: COMMENT
 func Banner(r *http.Request) (string, error) {
 	var banner string
 	var expiresAt time.Time
@@ -133,7 +142,7 @@ func Banner(r *http.Request) (string, error) {
 	// Check periods of campaigns
 	n := now()
 	for _, c := range campaigns {
-		if isAdmin || c.duringThePeriod(n) {
+		if (isAdmin && n.Before(c.expiresAt)) || c.duringThePeriod(n) {
 			if expiresAt.IsZero() || c.expiresAt.Before(expiresAt) {
 				expiresAt = c.expiresAt
 				banner = c.banner

@@ -13,6 +13,7 @@ func TestConcurrentAddCampaign(t *testing.T) {
 	conc := 10000 // Concurrency
 	camp_fr := time.Date(2018, time.October, 01, 0, 0, 0, 0, time.UTC)
 	camp_to := time.Date(2018, time.October, 14, 0, 0, 0, 0, time.UTC)
+	t.Logf("adding camaigns (concurrency:%v)", conc)
 	wg := &sync.WaitGroup{}
 	for i := 0; i < conc; i++ {
 		wg.Add(1)
@@ -67,13 +68,12 @@ func setCampaignsCase1(t *testing.T) {
 	}
 
 	for i, camp := range camps {
-		t.Logf("promotion:%v\t%v(%v-%v) banner:%v", i, camp.name, camp.from, camp.to, camp.banner)
+		t.Logf("promotion:%v\t%v( %v - %v ) banner:%v", i, camp.name, camp.from, camp.to, camp.banner)
 		err := NewCampaign(camp.name, camp.from, camp.to, camp.banner).Add()
 		if err != nil {
 			t.Fatalf("add campaign failed: %v", err)
 		}
 	}
-
 }
 
 func TestCampaignPeriod(t *testing.T) {
@@ -143,7 +143,8 @@ func TestCampaignPeriod(t *testing.T) {
 		// request from administrator
 		{now: time.Date(2018, time.September, 30, 23, 59, 59, 0, loc_tokyo), request: ReqFromAdmin1, banner: "<some>CAMPAIGN 1</some>"},
 		{now: time.Date(2018, time.September, 30, 23, 59, 59, 0, loc_tokyo), request: ReqFromAdmin2, banner: "<some>CAMPAIGN 1</some>"},
-		{now: time.Date(2018, time.September, 30, 10, 59, 59, 0, loc_newyork), request: ReqFromUser, banner: "<some>CAMPAIGN 1</some>"},
+		{now: time.Date(2018, time.October, 14, 00, 00, 0, 1, loc_tokyo), request: ReqFromAdmin2, banner: "<some>CAMPAIGN 2</some>"},
+		{now: time.Date(2018, time.October, 21, 18, 00, 0, 1, loc_newyork), request: ReqFromAdmin1, banner: ""},
 	}
 
 	for i, c := range tests {
@@ -160,23 +161,6 @@ func TestCampaignPeriod(t *testing.T) {
 	}
 	truncate()
 }
-
-/*
-func TestIpAddress(t *testing.T) {
-	// set campaigns case 1
-	setCampaignsCase1(t)
-
-	loc_tokyo, err := time.LoadLocation("Asia/Tokyo")
-	if err != nil {
-		t.Fatalf("LoadLocation loc1 failed:%v\n", err)
-	}
-	loc_newyork, err := time.LoadLocation("America/New_York")
-	if err != nil {
-		t.Fatalf("LoadLocation loc1 failed:%v\n", err)
-	}
-
-}
-*/
 
 func BenchmarkBanner(b *testing.B) {
 	benchBanner(b, 100)
@@ -205,6 +189,7 @@ func benchBanner(b *testing.B, camps int) {
 		if err != nil {
 			b.Fatalf("NewRequest error:%v\n", err)
 		}
+		ReqFromUser.RemoteAddr = "127.0.0.1:12345"
 		now = func() time.Time { return randTime() }
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
