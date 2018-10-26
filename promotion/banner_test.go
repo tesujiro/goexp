@@ -139,7 +139,11 @@ func TestCampaignPeriod(t *testing.T) {
 		// after campaigns
 		{now: time.Date(2018, time.October, 22, 07, 00, 0, 1, loc_tokyo), request: ReqFromUser, banner: ""},
 		{now: time.Date(2018, time.October, 21, 18, 00, 0, 1, loc_newyork), request: ReqFromUser, banner: ""},
+
 		// request from administrator
+		{now: time.Date(2018, time.September, 30, 23, 59, 59, 0, loc_tokyo), request: ReqFromAdmin1, banner: "<some>CAMPAIGN 1</some>"},
+		{now: time.Date(2018, time.September, 30, 23, 59, 59, 0, loc_tokyo), request: ReqFromAdmin2, banner: "<some>CAMPAIGN 1</some>"},
+		{now: time.Date(2018, time.September, 30, 10, 59, 59, 0, loc_newyork), request: ReqFromUser, banner: "<some>CAMPAIGN 1</some>"},
 	}
 
 	for i, c := range tests {
