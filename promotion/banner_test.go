@@ -9,6 +9,26 @@ import (
 	"time"
 )
 
+// truncate campaigns for testing
+// TODO: truncate -> truncateCampaigns
+func truncate() {
+	campaigns = make([]Campaign, 0)
+}
+
+func list() []Campaign {
+	cs := make([]Campaign, 0)
+	for _, c := range campaigns {
+		cs = append(cs, c)
+		fmt.Printf("campaign:%v\n", c)
+	}
+	return cs
+}
+
+// Return number of campaigns for testing
+//func countCampaigns() int {
+//return len(campaigns)
+//}
+
 func TestConcurrentAddCampaign(t *testing.T) {
 	conc := 10000 // Concurrency
 	camp_fr := time.Date(2018, time.October, 01, 0, 0, 0, 0, time.UTC)
@@ -33,7 +53,7 @@ func TestConcurrentAddCampaign(t *testing.T) {
 	}
 	wg.Wait()
 
-	count := countCampaigns()
+	count := len(campaigns)
 	if count != conc {
 		t.Errorf("campaigns number:%v - expected: %v ", count, conc)
 	}
