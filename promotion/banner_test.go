@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"reflect"
 	"sync"
 	"testing"
 	"time"
@@ -14,8 +15,9 @@ func truncateCampaigns() {
 	campaigns = make([]campaign, 0)
 }
 
-//TODO: move method
-func setCampaignsCase1(t *testing.T) {
+// Test Banner func while current time and users are changed.
+func TestCampaignPeriod(t *testing.T) {
+
 	loc_tokyo, err := time.LoadLocation("Asia/Tokyo")
 	if err != nil {
 		t.Fatalf("LoadLocation loc1 failed:%v\n", err)
@@ -44,6 +46,7 @@ func setCampaignsCase1(t *testing.T) {
 		{name: "CAMPAIGN1", from: camp1_fr, to: camp1_to, banner: "<some>CAMPAIGN 1</some>"},
 	}
 
+	// Add Campaigns
 	truncateCampaigns()
 	for i, camp := range camps {
 		t.Logf("promotion:%v\t%v( %v - %v ) banner:%v", i, camp.name, camp.from, camp.to, camp.banner)
@@ -51,23 +54,6 @@ func setCampaignsCase1(t *testing.T) {
 		if err != nil {
 			t.Fatalf("add campaign failed: %v", err)
 		}
-	}
-	for _, c := range campaigns {
-		fmt.Printf("campaign:%v\n", c)
-	}
-}
-
-func TestCampaignPeriod(t *testing.T) {
-	// set campaigns case 1
-	setCampaignsCase1(t)
-
-	loc_tokyo, err := time.LoadLocation("Asia/Tokyo")
-	if err != nil {
-		t.Fatalf("LoadLocation loc1 failed:%v\n", err)
-	}
-	loc_newyork, err := time.LoadLocation("America/New_York")
-	if err != nil {
-		t.Fatalf("LoadLocation loc1 failed:%v\n", err)
 	}
 
 	// request from user
@@ -121,13 +107,14 @@ func TestCampaignPeriod(t *testing.T) {
 		{now: time.Date(2018, time.October, 22, 07, 00, 0, 1, loc_tokyo), request: ReqFromUser, banner: ""},
 		{now: time.Date(2018, time.October, 21, 18, 00, 0, 1, loc_newyork), request: ReqFromUser, banner: ""},
 
-		// request from administrator
+		// requests from administrators
 		{now: time.Date(2018, time.September, 30, 23, 59, 59, 0, loc_tokyo), request: ReqFromAdmin1, banner: "<some>CAMPAIGN 1</some>"},
 		{now: time.Date(2018, time.September, 30, 23, 59, 59, 0, loc_tokyo), request: ReqFromAdmin2, banner: "<some>CAMPAIGN 1</some>"},
 		{now: time.Date(2018, time.October, 14, 00, 00, 0, 1, loc_tokyo), request: ReqFromAdmin2, banner: "<some>CAMPAIGN 2</some>"},
 		{now: time.Date(2018, time.October, 21, 18, 00, 0, 1, loc_newyork), request: ReqFromAdmin1, banner: ""},
 	}
 
+	// Test Banner func
 	for i, c := range tests {
 		t.Logf("test case:%v\tnow:%v", i, c.now)
 		nowFunc = func() time.Time { return c.now }
@@ -135,10 +122,48 @@ func TestCampaignPeriod(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Banner func failed:%v\n", err)
 		}
-		//fmt.Printf("now=%v banner=%v\n", now(), banner)
 		if c.banner != banner {
 			t.Errorf("case:%v received: %v - expected: %v - case: %v", i, banner, c.banner, c)
 		}
+	}
+}
+
+// TODO: Test Add Campaing
+func TestAddCampaign(t *testing.T) {
+}
+
+// Test Campaigns are ordered by expiration date.
+func TestAddCampaignOrder(t *testing.T) {
+	truncateCampaigns()
+
+	camps := []struct {
+		name     string
+		from, to time.Time
+	}{
+		{name: "CAMP1", from: time.Date(2018, time.October, 10, 0, 0, 0, 0, time.UTC), to: time.Date(2018, time.October, 30, 0, 0, 0, 0, time.UTC)},
+		{name: "CAMP2", from: time.Date(2018, time.October, 10, 0, 0, 0, 0, time.UTC), to: time.Date(2018, time.October, 20, 0, 0, 0, 0, time.UTC)},
+		{name: "CAMP3", from: time.Date(2018, time.October, 01, 0, 0, 0, 0, time.UTC), to: time.Date(2018, time.October, 25, 0, 0, 0, 0, time.UTC)},
+		{name: "CAMP4", from: time.Date(2018, time.October, 05, 0, 0, 0, 0, time.UTC), to: time.Date(2018, time.October, 25, 0, 0, 0, 0, time.UTC)},
+	}
+
+	// Add Campaigns
+	truncateCampaigns()
+	for _, camp := range camps {
+		t.Logf("promotion:\t%v( %v - %v ) ", camp.name, camp.from, camp.to)
+		err := AddCampaign(camp.name, camp.from, camp.to, camp.name)
+		if err != nil {
+			t.Fatalf("add campaign failed: %v", err)
+		}
+	}
+
+	// Check result
+	expected := []string{"CAMP2", "CAMP3", "CAMP4", "CAMP1"}
+	actual := []string{}
+	for _, c := range campaigns {
+		actual = append(actual, c.name)
+	}
+	if !reflect.DeepEqual(actual, expected) {
+		t.Errorf("campaigns order:%v - expected: %v ", actual, expected)
 	}
 }
 
@@ -172,7 +197,6 @@ func TestConcurrentAddCampaign(t *testing.T) {
 	if count != conc {
 		t.Errorf("campaigns number:%v - expected: %v ", count, conc)
 	}
-	truncateCampaigns()
 }
 
 // Benchmark banner performance while if number of campaigns is increased.
