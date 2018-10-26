@@ -116,26 +116,6 @@ func (c *Campaign) Add() error {
 	return nil
 }
 
-// truncate campaigns for testing
-// TODO: truncate -> truncateCampaigns
-func truncate() {
-	campaigns = make([]Campaign, 0)
-}
-
-func list() []Campaign {
-	cs := make([]Campaign, 0)
-	for _, c := range campaigns {
-		cs = append(cs, c)
-		fmt.Printf("campaign:%v\n", c)
-	}
-	return cs
-}
-
-// Return number of campaigns for testing
-func countCampaigns() int {
-	return len(campaigns)
-}
-
 // The function to get current time can be changed for testing.
 var nowFunc = time.Now
 
