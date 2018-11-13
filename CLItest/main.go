@@ -13,5 +13,7 @@ func main() {
 
 func parse() string {
 	flag.Parse()
+	fmt.Printf("args: %#v\n", flag.Args())
+	fmt.Printf("NArg:%v\n", flag.NArg())
 	return fmt.Sprintf("bool:%v", *arg_bool)
 }
