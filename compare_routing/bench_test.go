@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func benchmarkGreeting(s server, b *testing.B) {
+func benchmarkStaticPage(s server, b *testing.B) {
 	c := struct {
 		method string
 		url    string
@@ -47,7 +47,7 @@ func benchmarkGreeting(s server, b *testing.B) {
 	}
 }
 
-func BenchmarkGreeting_Standard(b *testing.B) {
+func BenchmarkStaticPage_Standard(b *testing.B) {
 	s := newStandardServer()
-	benchmarkGreeting(s, b)
+	benchmarkStaticPage(s, b)
 }
