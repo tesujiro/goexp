@@ -27,7 +27,7 @@ func TestServer(t *testing.T) {
 	for _, c := range cases {
 		req, err := http.NewRequest(c.method, c.url, nil)
 		if err != nil {
-			t.Fatalf("failed http.NewRequest %v", err)
+			t.Errorf("failed http.NewRequest %v", err)
 		}
 		w := httptest.NewRecorder()
 		srv.router.ServeHTTP(w, req)
@@ -36,17 +36,17 @@ func TestServer(t *testing.T) {
 		if c.status == 0 && r.StatusCode != http.StatusOK ||
 			c.status != 0 && r.StatusCode != c.status {
 			fmt.Printf("result:%#v\n", r)
-			t.Fatalf("method:%v url:%v StatusCode:%v", c.method, c.url, r.StatusCode)
+			t.Errorf("method:%v url:%v StatusCode:%v", c.method, c.url, r.StatusCode)
 		}
 		//fmt.Printf("header.Location:%#v\n", r.Header["Location"])
 		data, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			fmt.Printf("result:%#v\n", r)
-			t.Fatalf("method:%v url:%v Error by ioutil.ReadAll(). %v", c.method, c.url, err)
+			t.Errorf("method:%v url:%v Error by ioutil.ReadAll(). %v", c.method, c.url, err)
 		}
 		if c.body != "" && string(data) != c.body {
 			fmt.Printf("result:%#v\n", r)
-			t.Fatalf("method:%v url:%v Data Error. [%v]", c.method, c.url, string(data))
+			t.Errorf("method:%v url:%v Data Error. [%v]", c.method, c.url, string(data))
 		}
 	}
 }
