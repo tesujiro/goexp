@@ -51,3 +51,8 @@ func BenchmarkStaticPage_Standard(b *testing.B) {
 	s := newStandardServer()
 	benchmarkStaticPage(s, b)
 }
+
+func BenchmarkStaticPage_httprouter(b *testing.B) {
+	s := newHttprouterServer()
+	benchmarkStaticPage(s, b)
+}

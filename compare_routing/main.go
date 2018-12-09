@@ -19,14 +19,10 @@ func main() {
 	http.ListenAndServe("localhost:8000", s.handler())
 }
 
-func handleHello() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hello, World")
-	}
+func handleHello(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Hello, World")
 }
 
-func handleDefault() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/static", 301)
-	}
+func handleDefault(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "/static", 301)
 }
