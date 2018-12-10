@@ -25,7 +25,7 @@ func (s *httprouterServer) handleDefault() func(http.ResponseWriter, *http.Reque
 }
 
 func (s *httprouterServer) routes() {
-	s.router.GET("/", s.handleDefault())
+	s.router.Handle("GET", "/", s.handleDefault())
 	//s.router.HandleFunc("/greet", handleHello())
 	//s.router.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./public"))))
 }
