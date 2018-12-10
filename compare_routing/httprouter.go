@@ -21,11 +21,19 @@ func (s *httprouterServer) handler() http.Handler {
 }
 
 func (s *httprouterServer) handleDefault() func(http.ResponseWriter, *http.Request, httprouter.Params) {
-	return nil
+	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+		handleDefault(w, r)
+	}
+}
+
+func (s *httprouterServer) handleHello() func(http.ResponseWriter, *http.Request, httprouter.Params) {
+	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+		handleHello(w, r)
+	}
 }
 
 func (s *httprouterServer) routes() {
 	s.router.Handle("GET", "/", s.handleDefault())
-	//s.router.HandleFunc("/greet", handleHello())
+	s.router.Handle("GET", "/greet", s.handleHello())
 	//s.router.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./public"))))
 }
