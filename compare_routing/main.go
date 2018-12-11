@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"sync"
 )
 
 type server interface {
@@ -12,11 +13,28 @@ type server interface {
 	handler() http.Handler
 }
 
-func main() {
-	var s server
-	s = newStandardServer()
+func startWebServer(s server, url string, wg *sync.WaitGroup) {
+	wg.Add(1)
 	s.routes()
-	http.ListenAndServe("localhost:8000", s.handler())
+	go func() {
+		http.ListenAndServe(url, s.handler())
+		wg.Done()
+	}()
+}
+
+func main() {
+	wg := &sync.WaitGroup{}
+
+	// Standard Library Mux
+	startWebServer(newStandardServer(), "localhost:8000", wg)
+
+	// httprouter
+	startWebServer(newHttprouterServer(), "localhost:8001", wg)
+
+	// gorilla mux
+	startWebServer(newGorillaServer(), "localhost:8002", wg)
+
+	wg.Wait()
 }
 
 func handleHello(w http.ResponseWriter, r *http.Request) {
