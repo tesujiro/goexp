@@ -4,9 +4,9 @@ import (
 	"fmt"
 )
 
-type number uint8
+type number uint16
 
-const bitlen = 8
+const bitlen = 16
 
 type node struct {
 	x      number
@@ -51,7 +51,7 @@ func (bt *binaryTrie) Print() {
 
 func (bt *binaryTrie) Add(x number) bool {
 	u := bt.root
-	var pred *node // jump連鎖上で追加すべきノード  see 3.
+	var pred *node // predecessor : jump連鎖上で追加すべきノードの一つ前のノード  see 3.
 	exist := true
 	//fmt.Printf("Add(%v)\n", x)
 
@@ -60,10 +60,11 @@ func (bt *binaryTrie) Add(x number) bool {
 		c := uint(x) >> (bt.w - i - 1) & 1
 
 		// if not found set pred
-		if exist && (u == nil || u.child[c] == nil) {
+		//if exist && (u == nil || u.child[c] == nil) {
+		if exist && u.child[c] == nil {
 			exist = false
 			if c == 0 { //right
-				pred = u.jump.child[c]
+				pred = u.jump.child[0]
 			} else { //left
 				pred = u.jump
 			}
@@ -98,6 +99,29 @@ func (bt *binaryTrie) Add(x number) bool {
 	}
 
 	return true
+}
+
+func (bt *binaryTrie) Find(x number) number {
+	u := bt.root
+	for i := uint(0); i < bt.w; i++ {
+		c := uint(x) >> (bt.w - i - 1) & 1
+		if u.child[c] == nil {
+			// not founc & search for next value
+			if c == 0 {
+				u = u.jump
+			} else {
+				u = u.jump.child[1]
+			}
+			if u == bt.dummy {
+				return 0
+			} else {
+				return u.x
+			}
+		}
+		u = u.child[c]
+	}
+	// found x
+	return u.x
 }
 
 /*

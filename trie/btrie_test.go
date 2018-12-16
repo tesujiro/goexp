@@ -24,20 +24,34 @@ func uniq(t []number) (result []number) {
 	return
 }
 
-func testBinaryTrie_Add(t *testing.T) {
+func contains(t []number, i number) bool {
+	for _, v := range t {
+		if v == i {
+			return true
+		}
+	}
+	return false
+}
+
+func testBinaryTrie(t *testing.T) {
 	// prepare test data
 	max := int(math.Pow(2, bitlen))
-	var table []number
-	const numbers = 51200
+	const numbers = 5120
 
-	table = []number{}
 	rand.Seed(time.Now().UnixNano())
+	table := []number{}
 	for i := 0; i < numbers; i++ {
 		table = append(table, number(rand.Intn(max)))
+	}
+	test_table := []number{}
+	for i := 0; i < numbers; i++ {
+		test_table = append(test_table, number(rand.Intn(max)))
 	}
 
 	//
 	bt := newBinaryTrie()
+
+	// Add
 	for _, v := range table {
 		b := bt.Add(v)
 		_ = b
@@ -51,12 +65,25 @@ func testBinaryTrie_Add(t *testing.T) {
 		t.Fatalf("failed add %#v", result)
 	}
 
+	// Find
+	for _, v := range test_table {
+		n := bt.Find(v)
+		b := contains(table, v)
+		if n != v && b || n == v && !b {
+			t.Fatalf("failed find %#v contains=%v", int(v), b)
+		}
+		/*
+			if b {
+				t.Logf("found %#v", int(v))
+			}
+		*/
+	}
 }
 
-func TestBinaryTrie_Add(t *testing.T) {
+func TestBinaryTrie(t *testing.T) {
 	// prepare test data
 	for i := 0; i < 3; i++ {
-		testBinaryTrie_Add(t)
+		testBinaryTrie(t)
 	}
 }
 
