@@ -4,21 +4,6 @@ import (
 	"fmt"
 )
 
-type number uint16
-
-const bitlen = 16
-
-type node struct {
-	x      number
-	parent *node
-	child  [2]*node
-	jump   *node
-}
-
-//func newNode() *node {
-//return &node{}
-//}
-
 type binaryTrie struct {
 	root  *node
 	dummy *node
