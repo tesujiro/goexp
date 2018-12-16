@@ -33,7 +33,7 @@ func contains(t []number, i number) bool {
 	return false
 }
 
-func testBinaryTrie(t *testing.T) {
+func testBinaryTrie(bt trie, t *testing.T) {
 	// prepare test data
 	max := int(math.Pow(2, bitlen))
 	const numbers = 5120
@@ -49,7 +49,6 @@ func testBinaryTrie(t *testing.T) {
 	}
 
 	//
-	bt := newBinaryTrie()
 
 	// Add
 	for _, v := range table {
@@ -83,7 +82,8 @@ func testBinaryTrie(t *testing.T) {
 func TestBinaryTrie(t *testing.T) {
 	// prepare test data
 	for i := 0; i < 3; i++ {
-		testBinaryTrie(t)
+		bt := newBinaryTrie()
+		testBinaryTrie(bt, t)
 	}
 }
 

@@ -10,3 +10,10 @@ type node struct {
 	child  [2]*node
 	jump   *node
 }
+
+type trie interface {
+	GetAll() []number
+	Print()
+	Add(number) bool
+	Find(number) number
+}
