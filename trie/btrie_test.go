@@ -86,6 +86,13 @@ func TestBinaryTrie(t *testing.T) {
 	}
 }
 
+func TestXFastTrie(t *testing.T) {
+	// prepare test data
+	for i := 0; i < 3; i++ {
+		testBinaryTrie(newXFastTrie(), t)
+	}
+}
+
 func BenchmarkBinaryTrie_Add(b *testing.B) {
 	max := int(math.Pow(2, bitlen))
 	table := []number{}
