@@ -82,8 +82,7 @@ func testBinaryTrie(bt trie, t *testing.T) {
 func TestBinaryTrie(t *testing.T) {
 	// prepare test data
 	for i := 0; i < 3; i++ {
-		bt := newBinaryTrie()
-		testBinaryTrie(bt, t)
+		testBinaryTrie(newBinaryTrie(), t)
 	}
 }
 
