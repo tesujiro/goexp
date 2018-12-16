@@ -123,34 +123,3 @@ func (bt *binaryTrie) Find(x number) number {
 	// found x
 	return u.x
 }
-
-/*
-func (e1 number) Compare(e2 ch01.Comparable) int {
-	return int(e1 - e2.(number))
-}
-
-func (e1 number) HashCode() uint {
-	return uint(e1)
-}
-
-func testCh13() {
-	s := ch13.NewBinaryTrie()
-	for _, v := range table {
-		b := s.Add(v)
-		_ = b
-		//fmt.Printf("Add(%v)=>%v\n", v, b)
-	}
-	s.Print()
-}
-
-func main() {
-	bt := newBinaryTrie()
-	for _, v := range table {
-		b := bt.Add(v)
-		_ = b
-		//fmt.Printf("Add(%v)=>%v\n", v, b)
-	}
-	bt.Print()
-
-}
-*/
