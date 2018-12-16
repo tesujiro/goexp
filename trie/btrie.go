@@ -2,35 +2,17 @@ package main
 
 import (
 	"fmt"
-	"math"
-	"math/rand"
-	"time"
 )
 
 type number uint8
 
 const bitlen = 8
-const numbers = 16
-
-var table []number
-
-func init() {
-	max := int(math.Pow(2, bitlen))
-
-	table = []number{}
-	rand.Seed(time.Now().UnixNano())
-	for i := 0; i < numbers; i++ {
-		table = append(table, number(rand.Intn(max)))
-	}
-}
 
 type node struct {
 	x      number
 	parent *node
-	//left   *node
-	//right  *node
-	child [2]*node
-	jump  *node
+	child  [2]*node
+	jump   *node
 }
 
 //func newNode() *node {
@@ -45,8 +27,7 @@ type binaryTrie struct {
 
 func newBinaryTrie() *binaryTrie {
 	dummy := &node{}
-	dummy.child[0] = dummy
-	dummy.child[1] = dummy
+	dummy.child = [2]*node{dummy, dummy}
 
 	return &binaryTrie{
 		root:  &node{jump: dummy},
@@ -71,29 +52,36 @@ func (bt *binaryTrie) Print() {
 func (bt *binaryTrie) Add(x number) bool {
 	u := bt.root
 	var i, c uint
+	var pred *node
+	//already := false
+	//fmt.Printf("Add(%v)\n", x)
 
 	// 1 - search for x until following out oft trie
-	for i = 0; i < bt.w; i++ {
+	for ; ; i++ {
+		if i == bt.w {
+			// bt already has x
+			return false
+		}
 		c = uint(x) >> (bt.w - i - 1) & 1
 		if u == nil || u.child[c] == nil {
+			//already = true
+			if c == 0 { //right
+				pred = u.jump.child[c]
+			} else { //left
+				pred = u.jump
+			}
+			u.jump = nil
 			break
 		}
 		u = u.child[c]
 	}
-	if i == bt.w {
-		// bt already has x
-		return false
-	}
-	var pred *node
-	if c == 0 { //right
-		pred = u.jump.child[c]
-	} else { //left
-		pred = u.jump
-	}
-	u.jump = nil
 
 	// 2 - add path to x
-	for ; i < bt.w; i++ {
+	//for ; i < bt.w; i++ {
+	for ; ; i++ {
+		if i == bt.w {
+			break
+		}
 		c = uint(x) >> (bt.w - i - 1) & 1
 		u.child[c] = &node{}
 		u.child[c].parent = u
@@ -139,7 +127,6 @@ func testCh13() {
 	}
 	s.Print()
 }
-*/
 
 func main() {
 	bt := newBinaryTrie()
@@ -151,3 +138,4 @@ func main() {
 	bt.Print()
 
 }
+*/
