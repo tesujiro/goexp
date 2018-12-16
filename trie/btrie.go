@@ -51,41 +51,34 @@ func (bt *binaryTrie) Print() {
 
 func (bt *binaryTrie) Add(x number) bool {
 	u := bt.root
-	var i, c uint
-	var pred *node
-	//already := false
+	var pred *node // jump連鎖上で追加すべきノード  see 3.
+	exist := true
 	//fmt.Printf("Add(%v)\n", x)
 
 	// 1 - search for x until following out oft trie
-	for ; ; i++ {
-		if i == bt.w {
-			// bt already has x
-			return false
-		}
-		c = uint(x) >> (bt.w - i - 1) & 1
-		if u == nil || u.child[c] == nil {
-			//already = true
+	for i := uint(0); i < bt.w; i++ {
+		c := uint(x) >> (bt.w - i - 1) & 1
+
+		// if not found set pred
+		if exist && (u == nil || u.child[c] == nil) {
+			exist = false
 			if c == 0 { //right
 				pred = u.jump.child[c]
 			} else { //left
 				pred = u.jump
 			}
 			u.jump = nil
-			break
+		}
+
+		// 2 - if not found add path to x
+		if !exist {
+			u.child[c] = &node{}
+			u.child[c].parent = u
 		}
 		u = u.child[c]
 	}
-
-	// 2 - add path to x
-	//for ; i < bt.w; i++ {
-	for ; ; i++ {
-		if i == bt.w {
-			break
-		}
-		c = uint(x) >> (bt.w - i - 1) & 1
-		u.child[c] = &node{}
-		u.child[c].parent = u
-		u = u.child[c]
+	if exist {
+		return false
 	}
 	u.x = x
 
@@ -97,13 +90,11 @@ func (bt *binaryTrie) Add(x number) bool {
 	//fmt.Printf("%v => %v => %v\n", u.child[0].x, u.x, u.child[1].x)
 
 	// 4 - walk back up, updating jump pointers
-	v := u.parent
-	for v != nil {
+	for v := u.parent; v != nil; v = v.parent {
 		if (v.child[0] == nil && (v.jump == nil || v.jump.x > x)) ||
 			(v.child[1] == nil && (v.jump == nil || v.jump.x < x)) {
 			v.jump = u
 		}
-		v = v.parent
 	}
 
 	return true
