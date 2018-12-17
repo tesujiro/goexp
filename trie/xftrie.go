@@ -4,34 +4,21 @@ import (
 	"fmt"
 )
 
-/*
-type number uint16
-
-const bitlen = 16
-
-type node struct {
-	x      number
-	parent *node
-	child  [2]*node
-	jump   *node
-}
-*/
-
-var Empty struct{}
+//var Empty struct{}
 
 type xFastTrie struct {
 	root  *node
 	dummy *node
-	w     uint                  // bit length
-	t     []map[number]struct{} // hash
+	w     uint               // bit length
+	t     []map[number]*node // hash
 }
 
 func newXFastTrie() *xFastTrie {
 	dummy := &node{}
 	dummy.child = [2]*node{dummy, dummy}
-	t := make([]map[number]struct{}, bitlen+1)
+	t := make([]map[number]*node, bitlen+1)
 	for i := 0; i < len(t); i++ {
-		t[i] = make(map[number]struct{})
+		t[i] = make(map[number]*node)
 	}
 
 	return &xFastTrie{
@@ -62,12 +49,9 @@ func (bt *xFastTrie) Add(x number) bool {
 	//fmt.Printf("Add(%v)\n", x)
 
 	// 1 - search for x until following out oft trie
-	bt.t[0][x] = Empty
 	for i := uint(0); i < bt.w; i++ {
 		c := uint(x) >> (bt.w - i - 1) & 1
 
-		val := number(uint(x) >> (bt.w - i))
-		bt.t[i+1][val] = Empty
 		// if not found set pred
 		if exist && u.child[c] == nil {
 			exist = false
@@ -83,6 +67,8 @@ func (bt *xFastTrie) Add(x number) bool {
 		if !exist {
 			u.child[c] = &node{}
 			u.child[c].parent = u
+			val := number(uint(x) >> (bt.w - i))
+			bt.t[i][val] = u.child[c]
 		}
 		u = u.child[c]
 	}
@@ -90,6 +76,7 @@ func (bt *xFastTrie) Add(x number) bool {
 		return false
 	}
 	u.x = x
+	bt.t[bt.w][x] = u
 
 	// 3 = add u to linked list
 	u.child[0] = pred
@@ -110,24 +97,43 @@ func (bt *xFastTrie) Add(x number) bool {
 }
 
 func (bt *xFastTrie) Find(x number) number {
+	l := uint(0)  //law
+	h := bt.w + 1 //hight
 	u := bt.root
-	for i := uint(0); i < bt.w; i++ {
-		c := uint(x) >> (bt.w - i - 1) & 1
-		if u.child[c] == nil {
-			// not founc & search for next value
-			if c == 0 {
-				u = u.jump
-			} else {
-				u = u.jump.child[1]
-			}
-			if u == bt.dummy {
-				return 0
-			} else {
-				return u.x
-			}
+	for h-l > 1 {
+		i := (l + h) / 2
+		p := x >> (bt.w - i)
+		v, ok := bt.t[i][p]
+		if !ok {
+			h = i
+		} else {
+			u = v
+			l = i
 		}
-		u = u.child[c]
 	}
 	// found x
-	return u.x
+	if l == bt.w {
+		//fmt.Printf("found u.x=%v\n", int(u.x))
+		return u.x
+	}
+
+	if u.jump == nil {
+		return 0
+	}
+	// search for next value
+	c := x >> (bt.w - l - 1) & 1
+	var pred *node
+	if c == 1 {
+		pred = u.jump
+	} else {
+		//fmt.Printf("u=%#v\n", u)
+		//fmt.Printf("u.jump=%#v\n", u.jump)
+		pred = u.jump.child[0]
+	}
+	//if pred.right() == bt.dummy || pred.right() == nil {
+	if pred.child[1] == bt.dummy {
+		return 0
+	} else {
+		return pred.child[1].x
+	}
 }
