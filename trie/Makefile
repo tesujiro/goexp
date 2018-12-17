@@ -11,4 +11,4 @@ bench:
 
 profile:
 	go test -bench . -benchmem -cpuprofile cpu.out
-	go tool pprof --svg btrie.test cpu.out > cpu.svg
+	go tool pprof --svg trie.test cpu.out > cpu.svg
