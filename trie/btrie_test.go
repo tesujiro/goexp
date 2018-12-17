@@ -93,7 +93,7 @@ func TestXFastTrie(t *testing.T) {
 	}
 }
 
-func BenchmarkBinaryTrie_Add(b *testing.B) {
+func benchmarkTrie_Add(bt trie, b *testing.B) {
 	max := int(math.Pow(2, bitlen))
 	table := []number{}
 	//rand.Seed(time.Now().UnixNano())
@@ -101,9 +101,12 @@ func BenchmarkBinaryTrie_Add(b *testing.B) {
 		table = append(table, number(rand.Intn(max)))
 	}
 
-	bt := newBinaryTrie()
 	b.ResetTimer()
 	for _, i := range table {
 		bt.Add(number(i))
 	}
+}
+
+func BenchmarkBinaryTrie_Add(b *testing.B) {
+	benchmarkTrie_Add(newBinaryTrie(), b)
 }
