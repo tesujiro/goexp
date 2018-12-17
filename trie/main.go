@@ -1,8 +1,10 @@
 package main
 
-type number uint16
+import "fmt"
 
-const bitlen = 16
+type number uint32
+
+const bitlen = 32
 
 type node struct {
 	x      number
@@ -16,4 +18,13 @@ type trie interface {
 	Print()
 	Add(number) bool
 	Find(number) number
+}
+
+const debug = false
+
+func debugf(format string, a ...interface{}) (n int, err error) {
+	if debug {
+		return fmt.Printf(format, a...)
+	}
+	return 0, nil
 }

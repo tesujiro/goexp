@@ -1,9 +1,5 @@
 package main
 
-import (
-	"fmt"
-)
-
 //var Empty struct{}
 
 type xFastTrie struct {
@@ -39,14 +35,14 @@ func (bt *xFastTrie) GetAll() (result []number) {
 }
 
 func (bt *xFastTrie) Print() {
-	fmt.Printf("xFastTrie=%v\n", bt.GetAll())
+	debugf("xFastTrie=%v\n", bt.GetAll())
 }
 
 func (bt *xFastTrie) Add(x number) bool {
 	u := bt.root
 	var pred *node // predecessor : jump連鎖上で追加すべきノードの一つ前のノード  see 3.
 	exist := true
-	//fmt.Printf("Add(%v)\n", x)
+	//debugf("Add(%v)\n", x)
 
 	// 1 - search for x until following out oft trie
 	for i := uint(0); i < bt.w; i++ {
@@ -83,7 +79,7 @@ func (bt *xFastTrie) Add(x number) bool {
 	u.child[1] = pred.child[1]
 	u.child[0].child[1] = u
 	u.child[1].child[0] = u
-	//fmt.Printf("%v => %v => %v\n", u.child[0].x, u.x, u.child[1].x)
+	//debugf("%v => %v => %v\n", u.child[0].x, u.x, u.child[1].x)
 
 	// 4 - walk back up, updating jump pointers
 	for v := u.parent; v != nil; v = v.parent {
@@ -100,24 +96,32 @@ func (bt *xFastTrie) Find(x number) number {
 	l := uint(0)  //law
 	h := bt.w + 1 //hight
 	u := bt.root
+	loop := 0
 	for h-l > 1 {
 		i := (l + h) / 2
 		p := x >> (bt.w - i)
 		v, ok := bt.t[i][p]
 		if !ok {
+			debugf("N ")
 			h = i
 		} else {
+			debugf("Y ")
 			u = v
 			l = i
 		}
+		loop++
 	}
+	debugf("\n")
+	//debugf("loop=%v \n", loop)
 	// found x
 	if l == bt.w {
-		//fmt.Printf("found u.x=%v\n", int(u.x))
+		//debugf("found u.x=%v\n", int(u.x))
+		debugf("loop=%v FOUND %v\n", loop, x)
 		return u.x
 	}
 
 	if u.jump == nil {
+		debugf("loop=%v not found %v u.jump==nil \n", loop, x)
 		return 0
 	}
 	// search for next value
@@ -126,14 +130,16 @@ func (bt *xFastTrie) Find(x number) number {
 	if c == 1 {
 		pred = u.jump
 	} else {
-		//fmt.Printf("u=%#v\n", u)
-		//fmt.Printf("u.jump=%#v\n", u.jump)
+		//debugf("u=%#v\n", u)
+		//debugf("u.jump=%#v\n", u.jump)
 		pred = u.jump.child[0]
 	}
 	//if pred.right() == bt.dummy || pred.right() == nil {
 	if pred.child[1] == bt.dummy {
+		debugf("loop=%v, not found %v, return 0\n", loop, x)
 		return 0
 	} else {
+		debugf("loop=%v, not found %v, return next %v, next?:%v\n", loop, x, pred.child[1].x, x < pred.child[1].x)
 		return pred.child[1].x
 	}
 }
