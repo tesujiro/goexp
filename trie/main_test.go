@@ -114,3 +114,31 @@ func BenchmarkBinaryTrie_Add(b *testing.B) {
 func BenchmarkXFastTrie_Add(b *testing.B) {
 	benchmarkTrie_Add(newXFastTrie(), b)
 }
+
+func benchmarkTrie_Find(bt trie, b *testing.B) {
+	max := int(math.Pow(2, bitlen))
+	table := []number{}
+	test_table := []number{}
+	//rand.Seed(time.Now().UnixNano())
+	for i := 0; i < b.N; i++ {
+		table = append(table, number(rand.Intn(max)))
+		test_table = append(test_table, number(rand.Intn(max)))
+	}
+
+	for _, i := range table {
+		bt.Add(number(i))
+	}
+
+	b.ResetTimer()
+	for _, i := range test_table {
+		bt.Find(number(i))
+	}
+}
+
+func BenchmarkBinaryTrie_Find(b *testing.B) {
+	benchmarkTrie_Find(newBinaryTrie(), b)
+}
+
+func BenchmarkXFastTrie_Find(b *testing.B) {
+	benchmarkTrie_Find(newXFastTrie(), b)
+}
