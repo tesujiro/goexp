@@ -4,7 +4,7 @@ import "fmt"
 
 type number uint32
 
-const bitlen = 32
+const bitlen = 6
 
 type node struct {
 	x      number
@@ -20,7 +20,7 @@ type trie interface {
 	Find(number) number
 }
 
-const debug = false
+const debug = true
 
 func debugf(format string, a ...interface{}) (n int, err error) {
 	if debug {

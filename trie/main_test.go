@@ -36,7 +36,7 @@ func contains(t []number, i number) bool {
 func testBinaryTrie(bt trie, t *testing.T) {
 	// prepare test data
 	max := int(math.Pow(2, bitlen))
-	const numbers = 5120
+	const numbers = 8
 
 	rand.Seed(time.Now().UnixNano())
 	table := []number{}
@@ -57,6 +57,7 @@ func testBinaryTrie(bt trie, t *testing.T) {
 	}
 	//bt.Print()
 	result := bt.GetAll()
+	debugf("trie=%v\n", result)
 
 	sort.Slice(table, func(i, j int) bool { return table[i] < table[j] })
 	table = uniq(table)
@@ -81,14 +82,14 @@ func testBinaryTrie(bt trie, t *testing.T) {
 
 func TestBinaryTrie(t *testing.T) {
 	// prepare test data
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 1; i++ {
 		testBinaryTrie(newBinaryTrie(), t)
 	}
 }
 
 func TestXFastTrie(t *testing.T) {
 	// prepare test data
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 1; i++ {
 		testBinaryTrie(newXFastTrie(), t)
 	}
 }
@@ -133,6 +134,7 @@ func benchmarkTrie_Find(bt trie, b *testing.B) {
 	for _, i := range test_table {
 		bt.Find(number(i))
 	}
+	//b.StopTimer()
 }
 
 func BenchmarkBinaryTrie_Find(b *testing.B) {

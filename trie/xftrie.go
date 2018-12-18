@@ -102,16 +102,16 @@ func (bt *xFastTrie) Find(x number) number {
 		p := x >> (bt.w - i)
 		v, ok := bt.t[i][p]
 		if !ok {
-			debugf("N ")
+			//debugf("N ")
 			h = i
 		} else {
-			debugf("Y ")
+			//debugf("Y ")
 			u = v
 			l = i
 		}
 		loop++
 	}
-	debugf("\n")
+	//debugf("\n")
 	//debugf("loop=%v \n", loop)
 	// found x
 	if l == bt.w {
