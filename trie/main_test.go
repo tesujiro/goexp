@@ -36,7 +36,7 @@ func contains(t []number, i number) bool {
 func testBinaryTrie(bt trie, t *testing.T) {
 	// prepare test data
 	max := int(math.Pow(2, bitlen))
-	const numbers = 8
+	const numbers = 32
 
 	rand.Seed(time.Now().UnixNano())
 	table := []number{}

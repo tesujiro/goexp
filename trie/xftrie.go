@@ -42,7 +42,7 @@ func (bt *xFastTrie) Add(x number) bool {
 	u := bt.root
 	var pred *node // predecessor : jump連鎖上で追加すべきノードの一つ前のノード  see 3.
 	exist := true
-	//debugf("Add(%v)\n", x)
+	debugf("Add(%v)\n", x)
 
 	// 1 - search for x until following out oft trie
 	for i := uint(0); i < bt.w; i++ {
