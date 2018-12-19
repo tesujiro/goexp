@@ -4,7 +4,9 @@ import "fmt"
 
 type number uint32
 
-const bitlen = 6
+const bitlen = 2
+const add_count = 1
+const find_count = 6
 
 type node struct {
 	x      number

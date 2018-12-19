@@ -56,7 +56,8 @@ func (bt *xFastTrie) Add(x number) bool {
 			} else { //left
 				pred = u.jump
 			}
-			u.jump = nil
+
+			u.jump = nil //buggy?
 		}
 
 		// 2 - if not found add path to x
@@ -85,7 +86,12 @@ func (bt *xFastTrie) Add(x number) bool {
 	for v := u.parent; v != nil; v = v.parent {
 		if (v.child[0] == nil && (v.jump == nil || v.jump.x > x)) ||
 			(v.child[1] == nil && (v.jump == nil || v.jump.x < x)) {
+			debugf("set jump to%v\n", u.x)
 			v.jump = u
+		} else {
+			if v.jump == nil {
+				debugf("NOT SET JUMP %v !!!\n", u.x)
+			}
 		}
 	}
 
@@ -121,7 +127,7 @@ func (bt *xFastTrie) Find(x number) number {
 	}
 
 	if u.jump == nil {
-		debugf("loop=%v not found %v u.jump==nil \n", loop, x)
+		debugf("loop=%v not found %v u.jump==nil %v-%v\n", loop, x, l, h)
 		return 0
 	}
 	// search for next value
