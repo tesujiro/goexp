@@ -18,7 +18,7 @@ func newXFastTrie() *xFastTrie {
 	}
 
 	return &xFastTrie{
-		root:  &node{jump: dummy},
+		root:  &node{jump: dummy, x: 8888},
 		dummy: dummy,
 		w:     bitlen,
 		t:     t,
@@ -62,16 +62,20 @@ func (bt *xFastTrie) Add(x number) bool {
 
 		// 2 - if not found add path to x
 		if !exist {
-			u.child[c] = &node{}
+			u.child[c] = &node{x: 9999}
 			u.child[c].parent = u
-			val := number(uint(x) >> (bt.w - i))
-			bt.t[i][val] = u.child[c]
+			val := number(uint(x) >> (bt.w - i - 1))
+			bt.t[i+1][val] = u.child[c]
+			debugf("set t[%v][%v]\n", i+1, val)
 		}
 		u = u.child[c]
+		//u.x = number(uint(x) >> (bt.w - i)) //debug
+		//debugf("i=%v ", i)
 	}
 	if exist {
 		return false
 	}
+	//debugf(" ==> set u.x=%v\n", x)
 	u.x = x
 	bt.t[bt.w][x] = u
 
@@ -86,7 +90,7 @@ func (bt *xFastTrie) Add(x number) bool {
 	for v := u.parent; v != nil; v = v.parent {
 		if (v.child[0] == nil && (v.jump == nil || v.jump.x > x)) ||
 			(v.child[1] == nil && (v.jump == nil || v.jump.x < x)) {
-			debugf("set jump to%v\n", u.x)
+			//debugf("set jump to%v\n", u.x)
 			v.jump = u
 		} else {
 			if v.jump == nil {
@@ -108,16 +112,16 @@ func (bt *xFastTrie) Find(x number) number {
 		p := x >> (bt.w - i)
 		v, ok := bt.t[i][p]
 		if !ok {
-			//debugf("N ")
+			debugf("N(i:%v,u.x:%v) ", i, u.x)
 			h = i
 		} else {
-			//debugf("Y ")
+			debugf("Y(i:%v,u.x:%v->%v) ", i, u.x, v.x)
 			u = v
 			l = i
 		}
 		loop++
 	}
-	//debugf("\n")
+	debugf("\n")
 	//debugf("loop=%v \n", loop)
 	// found x
 	if l == bt.w {
@@ -126,10 +130,13 @@ func (bt *xFastTrie) Find(x number) number {
 		return u.x
 	}
 
-	if u.jump == nil {
-		debugf("loop=%v not found %v u.jump==nil %v-%v\n", loop, x, l, h)
-		return 0
-	}
+	/*
+		if u.jump == nil {
+			debugf("loop=%v not found %v u.jump==nil u.x=%v u.parent.x=%v %v-%v\n", loop, x, u.x, u.parent.x, l, h)
+			return 0
+		}
+	*/
+
 	// search for next value
 	c := x >> (bt.w - l - 1) & 1
 	var pred *node

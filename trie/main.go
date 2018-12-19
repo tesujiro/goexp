@@ -4,9 +4,13 @@ import "fmt"
 
 type number uint32
 
-const bitlen = 2
-const add_count = 1
-const find_count = 6
+const bitlen = 32
+
+const debug = false
+
+// for test
+const add_count = 512
+const find_count = 5120
 
 type node struct {
 	x      number
@@ -21,8 +25,6 @@ type trie interface {
 	Add(number) bool
 	Find(number) number
 }
-
-const debug = true
 
 func debugf(format string, a ...interface{}) (n int, err error) {
 	if debug {
