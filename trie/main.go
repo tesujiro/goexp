@@ -6,7 +6,7 @@ type number uint32
 
 const bitlen = 32
 
-const debug = false
+const debug = true
 
 // for test
 const add_count = 512

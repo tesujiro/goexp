@@ -47,8 +47,6 @@ func testBinaryTrie(bt trie, t *testing.T) {
 		test_table = append(test_table, number(rand.Intn(max)))
 	}
 
-	//
-
 	// Add
 	for _, v := range table {
 		b := bt.Add(v)
@@ -56,7 +54,7 @@ func testBinaryTrie(bt trie, t *testing.T) {
 	}
 	//bt.Print()
 	result := bt.GetAll()
-	debugf("trie=%v\n", result)
+	//debugf("trie=%v\n", result)
 
 	sort.Slice(table, func(i, j int) bool { return table[i] < table[j] })
 	table = uniq(table)

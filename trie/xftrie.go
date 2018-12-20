@@ -18,7 +18,7 @@ func newXFastTrie() *xFastTrie {
 	}
 
 	return &xFastTrie{
-		root:  &node{jump: dummy, x: 8888},
+		root:  &node{jump: dummy},
 		dummy: dummy,
 		w:     bitlen,
 		t:     t,
@@ -42,7 +42,6 @@ func (bt *xFastTrie) Add(x number) bool {
 	u := bt.root
 	var pred *node // predecessor : jump連鎖上で追加すべきノードの一つ前のノード  see 3.
 	exist := true
-	debugf("Add(%v)\n", x)
 
 	// 1 - search for x until following out oft trie
 	for i := uint(0); i < bt.w; i++ {
@@ -62,7 +61,7 @@ func (bt *xFastTrie) Add(x number) bool {
 
 		// 2 - if not found add path to x
 		if !exist {
-			u.child[c] = &node{x: 9999}
+			u.child[c] = &node{}
 			u.child[c].parent = u
 			val := number(uint(x) >> (bt.w - i - 1))
 			bt.t[i+1][val] = u.child[c]
@@ -73,7 +72,6 @@ func (bt *xFastTrie) Add(x number) bool {
 		return false
 	}
 	u.x = x
-	//bt.t[bt.w][x] = u
 
 	// 3 = add u to linked list
 	u.child[0] = pred
@@ -99,7 +97,6 @@ func (bt *xFastTrie) Find(x number) number {
 	l := uint(0)  //law
 	h := bt.w + 1 //hight
 	u := bt.root
-	loop := 0
 	for h-l > 1 {
 		i := (l + h) / 2
 		p := x >> (bt.w - i)
@@ -110,7 +107,6 @@ func (bt *xFastTrie) Find(x number) number {
 			u = v
 			l = i
 		}
-		loop++
 	}
 	// found x
 	if l == bt.w {
