@@ -95,9 +95,9 @@ func (bt *xFastTrie) Add(x number) bool {
 }
 
 func (bt *xFastTrie) Find(x number) number {
+	u := bt.root
 	bot := uint(0)  // bottom
 	top := bt.w + 1 // top
-	u := bt.root
 	for top-bot > 1 {
 		mid := (bot + top) >> 1
 		p := x >> (bt.w - mid)

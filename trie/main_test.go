@@ -131,7 +131,7 @@ func benchmarkTrie_Find(bt trie, b *testing.B) {
 	for _, i := range test_table {
 		bt.Find(number(i))
 	}
-	//b.StopTimer()
+	b.StopTimer()
 }
 
 func BenchmarkBinaryTrie_Find(b *testing.B) {
