@@ -15,6 +15,7 @@ func newXFastTrie() *xFastTrie {
 	t := make([]map[number]*node, bitlen+1)
 	for i := 0; i < len(t); i++ {
 		t[i] = make(map[number]*node)
+		//t[i] = make(map[number]*node, 1000)
 	}
 
 	return &xFastTrie{
@@ -94,27 +95,26 @@ func (bt *xFastTrie) Add(x number) bool {
 }
 
 func (bt *xFastTrie) Find(x number) number {
-	l := uint(0)  //law
-	h := bt.w + 1 //hight
+	bot := uint(0)  // bottom
+	top := bt.w + 1 // top
 	u := bt.root
-	for h-l > 1 {
-		i := (l + h) / 2
-		p := x >> (bt.w - i)
-		v, ok := bt.t[i][p]
-		if !ok {
-			h = i
+	for top-bot > 1 {
+		mid := (bot + top) >> 1
+		p := x >> (bt.w - mid)
+		if v, ok := bt.t[mid][p]; !ok {
+			top = mid
 		} else {
 			u = v
-			l = i
+			bot = mid
 		}
 	}
 	// found x
-	if l == bt.w {
+	if bot == bt.w {
 		return u.x
 	}
 
 	// search for next value
-	c := x >> (bt.w - l - 1) & 1
+	c := x >> (bt.w - bot - 1) & 1
 	var pred *node
 	if c == 1 {
 		pred = u.jump
