@@ -7,7 +7,7 @@ cover:
 	go tool cover -html=cover.out -o cover.html
 
 bench:
-	go test -bench . -benchmem -timeout 0
+	go test -bench . -benchmem -timeout 0 -v
 
 profile:
 	go test -bench . -benchmem -cpuprofile cpu.out

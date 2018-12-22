@@ -67,5 +67,14 @@ ok  	github.com/tesujiro/goexp/benchFindFromSet	141.301s
 ```
 
 # Conclusion
-Use map if length of list is more than 2^2
+Use map if the length of list is more than 2^2.
 
+# Add: Benchmark the cost of set list
+```
+BenchmarkBinary/SetList-4         	 5000000	       323 ns/op	       4 B/op	       0 allocs/op
+BenchmarkHashtable/SetList-4      	20000000	       201 ns/op	      11 B/op	       0 allocs/op
+```
+
+# Add: Conclusion
+Inserting a element to map costs 201 nano seconds.
+Use map if the length of list is more than 2^2 and number of existence check is more than 10 times of number of elements.

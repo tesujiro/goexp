@@ -29,8 +29,20 @@ func TestFind_Hashtable(t *testing.T) {
 	testFind(newHashtable(), t)
 }
 
+func benchSet(f finder, b *testing.B) {
+	max := int(math.Pow(2, width))
+	list := make(numbers, b.N)
+
+	for i := 0; i < b.N; i++ {
+		list[i] = number(rand.Intn(max))
+	}
+
+	b.ResetTimer()
+	f.set(list)
+	b.StopTimer()
+}
+
 func benchFind(f finder, elements int, b *testing.B) {
-	//rand.Seed(time.Now().UnixNano())
 	max := int(math.Pow(2, width))
 	list := make(numbers, elements)
 	test_table := make(numbers, b.N)
@@ -52,13 +64,23 @@ func benchFind(f finder, elements int, b *testing.B) {
 }
 
 func benchFindLoop(f func() finder, b *testing.B) {
-	es := make([]int, 20)
+	var es []int
+	// Bench Set List
+	es = make([]int, 32)
+	for i := 0; i < len(es); i++ {
+		es[i] = 2 << uint(i)
+	}
+	b.Run("SetList", func(b *testing.B) {
+		benchSet(f(), b)
+	})
+
+	// Bench Find
+	es = make([]int, 20)
 	for i := 0; i < len(es); i++ {
 		es[i] = 2 << uint(i)
 	}
 	for i, e := range es {
 		b.Run(fmt.Sprintf("FindFrom2^%v", i), func(b *testing.B) {
-			//benchFind(newBinary(), e, b)
 			benchFind(f(), e, b)
 		})
 	}
