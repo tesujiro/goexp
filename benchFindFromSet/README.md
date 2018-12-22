@@ -7,13 +7,14 @@ Measure a perfomance of checking existence of a element in the list.
 * Hashtable (map)
 
 # Environment
-
+```
 MacBook Pro (13-inch, 2016, Four Thunderbolt 3 Ports)
 Processor 2.9 GHz Intel Core i5
 Memory 16 GB 2133 MHz LPDDR3
 macOS 10.14.1
 
 go version go1.11 darwin/amd64
+```
 
 # Benchmark Results
 ```
