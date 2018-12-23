@@ -108,6 +108,10 @@ func (bt *xFastTrie) Find(x number) number {
 			bot = mid
 		}
 	}
+	/*j
+	_ = u
+	return number(0)
+	*/
 	// found x
 	if bot == bt.w {
 		return u.x

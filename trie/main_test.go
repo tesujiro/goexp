@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math"
 	"math/rand"
 	"reflect"
@@ -113,13 +114,15 @@ func BenchmarkXFastTrie_Add(b *testing.B) {
 	benchmarkTrie_Add(newXFastTrie(), b)
 }
 
-func benchmarkTrie_Find(bt trie, b *testing.B) {
+func benchmarkTrie_FindFromN(bt trie, elements int, b *testing.B) {
 	max := int(math.Pow(2, bitlen))
 	table := []number{}
 	test_table := []number{}
 	//rand.Seed(time.Now().UnixNano())
-	for i := 0; i < b.N; i++ {
+	for i := 0; i < elements; i++ {
 		table = append(table, number(rand.Intn(max)))
+	}
+	for i := 0; i < b.N; i++ {
 		test_table = append(test_table, number(rand.Intn(max)))
 	}
 
@@ -134,10 +137,26 @@ func benchmarkTrie_Find(bt trie, b *testing.B) {
 	b.StopTimer()
 }
 
+func benchmarkTrie_Find(cnst func() trie, b *testing.B) {
+	table := make([]int, 20)
+	for i := 0; i < len(table); i++ {
+		table[i] = 2 << uint(i-1)
+	}
+	for i, v := range table {
+		b.Run(fmt.Sprintf("FindFrom2^%v", i), func(b *testing.B) {
+			benchmarkTrie_FindFromN(cnst(), v, b)
+		})
+	}
+}
+
 func BenchmarkBinaryTrie_Find(b *testing.B) {
-	benchmarkTrie_Find(newBinaryTrie(), b)
+	benchmarkTrie_Find(func() trie {
+		return trie(newBinaryTrie())
+	}, b)
 }
 
 func BenchmarkXFastTrie_Find(b *testing.B) {
-	benchmarkTrie_Find(newXFastTrie(), b)
+	benchmarkTrie_Find(func() trie {
+		return trie(newXFastTrie())
+	}, b)
 }
