@@ -155,7 +155,7 @@ func (xft *xFastTrie) find(r rune) bool {
 	}
 	// found x
 	if bot == xft.w {
-		fmt.Println("Found")
+		//fmt.Println("Found")
 		return true
 		//return u.x
 	}
