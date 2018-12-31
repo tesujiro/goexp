@@ -100,17 +100,18 @@ func (bt *xFastTrie) Find(x number) number {
 	top := bt.w + 1 // top
 	for top-bot > 1 {
 		mid := (bot + top) >> 1
-		p := x >> (bt.w - mid)
-		if v, ok := bt.t[mid][p]; !ok {
+		//p := x >> (bt.w - mid)
+		//if v, ok := bt.t[mid][p]; !ok {
+		if v, ok := bt.t[mid][x>>(bt.w-mid)]; !ok {
 			top = mid
 		} else {
 			u = v
 			bot = mid
 		}
 	}
-	/*j
-	_ = u
-	return number(0)
+	/*
+		_ = u
+		return number(0)
 	*/
 	// found x
 	if bot == bt.w {
