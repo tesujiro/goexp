@@ -23,9 +23,9 @@ func TestE2E(t *testing.T) {
 	}{
 		{method: "GET", url: "/greet", body: "Hello, World"},
 		{method: "GET", url: "/static/", body: "hello, html!\n"},
-		{method: "GET", url: "/static", status: http.StatusOK},            // http client does not get http.StatusMovedPermanently
-		{method: "GET", url: "/static/index.html", status: http.StatusOK}, // http client does not get http.StatusMovedPermanently
-		{method: "GET", url: "/no_page", status: http.StatusOK},           // http client does not get http.StatusMovedPermanently
+		{method: "GET", url: "/static", status: http.StatusOK},            // http client does not return http.StatusMovedPermanently
+		{method: "GET", url: "/static/index.html", status: http.StatusOK}, // http client does not return http.StatusMovedPermanently
+		{method: "GET", url: "/no_page", status: http.StatusOK},           // http client does not return http.StatusMovedPermanently
 	}
 	for _, c := range cases {
 		req, err := http.NewRequest(c.method, "http://"+addr+c.url, nil)
