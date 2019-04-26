@@ -6,15 +6,16 @@ import (
 	"os"
 )
 
+var (
+	flags string
+	flagt string
+)
+
 func main() {
 	println(_main())
 }
 
 func _main() string {
-	var (
-		flags string
-		flagt string
-	)
 	/* register flag name and shorthand name */
 	f := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	f.StringVar(&flags, "s", "", "string flag")
