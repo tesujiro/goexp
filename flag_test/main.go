@@ -22,9 +22,11 @@ func _main() string {
 	f.StringVar(&flagt, "t", "", "string flag")
 
 	f.Parse(os.Args[1:])
-	for 0 < f.NArg() {
-		f.Parse(f.Args()[1:])
-	}
+	/*
+		for 0 < f.NArg() {
+			f.Parse(f.Args()[1:])
+		}
+	*/
 
-	return fmt.Sprintf("%v,%v", flags, flagt)
+	return fmt.Sprintf("%v,%v,%v", flags, flagt, f.Args())
 }

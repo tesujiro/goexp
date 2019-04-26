@@ -10,10 +10,11 @@ func TestMain(t *testing.T) {
 		options []string
 		result  string
 	}{
-		{options: []string{"-s", "sss"}, result: "sss,"},
-		{options: []string{"-t", "ttt"}, result: ",ttt"},
-		{options: []string{}, result: ","},
-		{options: []string{"-s", "sss", "-t", "ttt"}, result: "sss,ttt"},
+		{options: []string{"-s", "sss"}, result: "sss,,[]"},
+		{options: []string{"-t", "ttt"}, result: ",ttt,[]"},
+		{options: []string{}, result: ",,[]"},
+		{options: []string{"-s", "sss", "-t", "ttt"}, result: "sss,ttt,[]"},
+		{options: []string{"xxx"}, result: ",,[xxx]"},
 	}
 
 	for case_number, test := range tests {
