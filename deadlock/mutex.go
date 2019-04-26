@@ -9,8 +9,8 @@ import (
 )
 
 func main() {
-	mu1 := &sync.Mutex{}
-	mu2 := &sync.Mutex{}
+	mu1 := &sync.RWMutex{}
+	mu2 := &sync.RWMutex{}
 
 	// mutex1 -> mutex2
 	go func() {
