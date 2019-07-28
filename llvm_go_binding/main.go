@@ -92,6 +92,7 @@ func main() {
 		pass.AddGVNPass()
 		pass.AddCFGSimplificationPass()
 	*/
+
 	pass.Run(mod)
 
 	// Output llvm IR
