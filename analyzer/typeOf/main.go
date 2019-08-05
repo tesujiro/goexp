@@ -42,7 +42,10 @@ func main() {
 		case *ast.BinaryExpr:
 			pos := fset.Position(n.Pos())
 			typ := info.TypeOf(n)
-			fmt.Printf("type of %v is %v\n", pos, typ)
+			fmt.Printf("type of %v is %v\n", pos, typ) // typ == types.Typ[types.Int]
+			fmt.Printf("Type=%T\n", types.Typ)
+			fmt.Printf("typ(%T)=%#v\n", typ, typ)
+			fmt.Printf("typ=%#v\n", types.Typ[typ.(*types.Basic).Kind()])
 		}
 		return true
 	})
