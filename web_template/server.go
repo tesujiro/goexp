@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
 )
 
 type server struct {
@@ -18,7 +19,11 @@ func newServer() *server {
 func main() {
 	s := newServer()
 	s.routes()
-	http.ListenAndServe("localhost:8000", s.router)
+	err := http.ListenAndServe("localhost:8000", s.router)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 }
 
 func (s *server) routes() {
