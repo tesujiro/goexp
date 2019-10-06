@@ -1,63 +1,68 @@
 package main
 
-import "fmt"
-
 type lengther interface {
 	length() int
 }
 
-func main() {
-	a := make(naiveSlice, 10)
-	fmt.Println(a.length())
+type base struct {
+	size int
 }
 
-func isLen(s []int, length int) int {
-	//return len(s) - length
-	l := len(s)
-	if length > l {
+func (b base) shorterThan(length int) int {
+	if b.size < length {
 		return 1
-	} else if length < l {
+	} else if b.size > length {
 		return -1
 	}
 	return 0
 }
 
-type naiveSlice []int
+type naiveList base
 
-func (s *naiveSlice) length() int {
+func newNaiveList(l int) naiveList {
+	return naiveList{size: l}
+}
+
+func (n naiveList) length() int {
 	var length int
-	for length = 0; isLen(([]int)(*s), length) < 0; length++ {
+	for length = 0; base(n).shorterThan(length) < 0; length++ {
 	}
 	return length
 }
 
-type binarySlice []int
+type binSearchList base
 
-func (s *binarySlice) length() int {
-	//var length = 0
+func newBinSearchList(l int) binSearchList {
+	return binSearchList{size: l}
+}
+
+func (b binSearchList) length() int {
 	var bin int = 1
 	var start int = 0
-	for isLen(([]int)(*s), start) < 0 {
+	for base(b).shorterThan(start) < 0 {
 		start = start + bin
 		bin *= 2
 	}
-	return s.binSearch(start-bin/2, bin/2)
+	return b.binSearch(start-bin/2, bin/2)
 }
 
 // search length from start to start+bin-1
-func (s *binarySlice) binSearch(start, bin int) int {
+func (b binSearchList) binSearch(start, bin int) int {
 	//fmt.Printf("binSearch(%v, %v)\n", start, bin)
 	if bin == 1 {
 		return start
 	}
 	bin = bin / 2
-	res := isLen(([]int)(*s), start+bin)
+	res := base(b).shorterThan(start + bin)
 	switch {
 	case res < 0:
-		return s.binSearch(start+bin, bin)
+		return b.binSearch(start+bin, bin)
 	case res == 0:
 		return start + bin
 	default:
-		return s.binSearch(start, bin)
+		return b.binSearch(start, bin)
 	}
+}
+
+func main() {
 }
