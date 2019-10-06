@@ -34,16 +34,14 @@ func (s *naiveSlice) length() int {
 type binarySlice []int
 
 func (s *binarySlice) length() int {
-	var length = 0
+	//var length = 0
 	var bin int = 1
 	var start int = 0
-	for isLen(([]int)(*s), length) < 0 {
+	for isLen(([]int)(*s), start) < 0 {
 		start = start + bin
-		length = start
 		bin *= 2
 	}
-	length = s.binSearch(start-bin/2, bin/2)
-	return length
+	return s.binSearch(start-bin/2, bin/2)
 }
 
 // search length from start to start+bin-1
