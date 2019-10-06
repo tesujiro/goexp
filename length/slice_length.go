@@ -30,3 +30,36 @@ func (s *naiveSlice) length() int {
 	}
 	return length
 }
+
+type binarySlice []int
+
+func (s *binarySlice) length() int {
+	var length = 0
+	var bin int = 1
+	var start int = 0
+	for isLen(([]int)(*s), length) < 0 {
+		start = start + bin
+		length = start
+		bin *= 2
+	}
+	length = s.binSearch(start-bin/2, bin/2)
+	return length
+}
+
+// search length from start to start+bin-1
+func (s *binarySlice) binSearch(start, bin int) int {
+	//fmt.Printf("binSearch(%v, %v)\n", start, bin)
+	if bin == 1 {
+		return start
+	}
+	bin = bin / 2
+	res := isLen(([]int)(*s), start+bin)
+	switch {
+	case res < 0:
+		return s.binSearch(start+bin, bin)
+	case res == 0:
+		return start + bin
+	default:
+		return s.binSearch(start, bin)
+	}
+}
