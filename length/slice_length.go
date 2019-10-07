@@ -1,5 +1,11 @@
 package main
 
+import (
+	"math/rand"
+
+	"github.com/pkg/profile"
+)
+
 type lengther interface {
 	length() int
 }
@@ -65,4 +71,13 @@ func (b binSearchList) binSearch(start, bin int) int {
 }
 
 func main() {
+	var l int
+	N := 10000000
+	defer profile.Start(profile.ProfilePath(".")).Stop()
+	for i := 0; i < N; i++ {
+		rnd := rand.Intn(N)
+		s := newBinSearchList(rnd)
+		l = s.length()
+	}
+	_ = l
 }
