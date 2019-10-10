@@ -1,19 +1,28 @@
 package main
 
-import "testing"
+import (
+	"math/rand"
+	"testing"
+)
 
 func TestMain(t *testing.T) {
-	expected := 4120
-	n := newNaiveList(expected)
-	actual := n.length()
-	if actual != expected {
-		t.Errorf("want: %v actual: %v", expected, actual)
+	test := func(expected int) {
+		n := newNaiveList(expected)
+		actual := n.length()
+		if actual != expected {
+			t.Errorf("want: %v actual: %v", expected, actual)
+		}
+		bs := newBinSearchList(expected)
+		actual = bs.length()
+		if actual != expected {
+			t.Errorf("want: %v actual: %v", expected, actual)
+		}
 	}
-	bs := newBinSearchList(expected)
-	actual = bs.length()
-	if actual != expected {
-		t.Errorf("want: %v actual: %v", expected, actual)
+	test(0)
+	for i := 0; i < 100; i++ {
+		test(rand.Intn(1000000))
 	}
+
 }
 
 func BenchmarkLength(b *testing.B) {
