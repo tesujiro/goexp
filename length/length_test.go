@@ -27,15 +27,16 @@ func TestMain(t *testing.T) {
 
 func BenchmarkLength(b *testing.B) {
 	var l int
+	var s lengther
 	b.Run("naiveList", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			s := newNaiveList(i)
+			s = newNaiveList(i)
 			l = s.length()
 		}
 	})
 	b.Run("binSearchList", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			s := newBinSearchList(i)
+			s = newBinSearchList(i)
 			l = s.length()
 		}
 	})
