@@ -29,6 +29,23 @@ func (b base) shorterThan(length int) int {
 	return 0
 }
 
+func (b base) binSearch(start, bit int) int {
+	if bit == 0 {
+		return start
+	}
+	bit--
+	next := start + 1<<bit
+	res := b.shorterThan(next)
+	switch {
+	case res < 0:
+		return b.binSearch(next, bit)
+	case res == 0:
+		return next
+	default:
+		return b.binSearch(start, bit)
+	}
+}
+
 type naiveList base
 
 func newNaiveList(l int) naiveList {
@@ -49,31 +66,16 @@ func newBinSearchList(l int) binSearchList {
 }
 
 func (b binSearchList) length() int {
-	var bin int = 1
+	var bit int = 0
 	var start int = 0
 	for base(b).shorterThan(start) < 0 {
-		start = start + bin
-		bin *= 2
+		bit++
+		start += 1 << bit
 	}
-	return b.binSearch(start-bin/2, bin/2)
-}
-
-// search length from start to start+bin-1
-func (b binSearchList) binSearch(start, bin int) int {
-	//fmt.Printf("binSearch(%v, %v)\n", start, bin)
-	if bin == 1 {
-		return start
+	if bit == 0 {
+		return 0
 	}
-	bin = bin / 2
-	res := base(b).shorterThan(start + bin)
-	switch {
-	case res < 0:
-		return b.binSearch(start+bin, bin)
-	case res == 0:
-		return start + bin
-	default:
-		return b.binSearch(start, bin)
-	}
+	return base(b).binSearch(start-1<<bit, bit)
 }
 
 type binSearchListWithLimitedSize baseWithLimitedSize
@@ -84,23 +86,7 @@ func newBinSearchListWithLimitedSize(l, m int) binSearchListWithLimitedSize {
 
 func (b binSearchListWithLimitedSize) length() int {
 	n := int(math.Ceil(math.Log2(float64(b.max))))
-	return b.binSearch(0, n)
-}
-
-func (b binSearchListWithLimitedSize) binSearch(start, bit int) int {
-	if bit == 0 {
-		return start
-	}
-	bit--
-	res := (b.base).shorterThan(start + 1<<bit)
-	switch {
-	case res < 0:
-		return b.binSearch(start+1<<bit, bit)
-	case res == 0:
-		return start + 1<<bit
-	default:
-		return b.binSearch(start, bit)
-	}
+	return baseWithLimitedSize(b).binSearch(0, n)
 }
 
 func main() {

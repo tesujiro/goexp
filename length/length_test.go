@@ -23,13 +23,14 @@ func TestMain(t *testing.T) {
 			t.Errorf("want: %v actual: %v", expected, actual)
 		}
 	}
+	//test(6142, 10000)
+	//test(9432, 10000)
 	test(0, 0)
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 10; i++ {
 		max := rand.Intn(1000000)
 		num := rand.Intn(max)
 		test(num, max)
 	}
-
 }
 
 func BenchmarkLength(b *testing.B) {
