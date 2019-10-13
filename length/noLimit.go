@@ -7,10 +7,7 @@ func newNaiveList(l int) naiveList {
 }
 
 func (n naiveList) length() int {
-	var length int
-	for length = 0; base(n).shorterThan(length) < 0; length++ {
-	}
-	return length
+	return base(n).bruteForce(0, -1)
 }
 
 type binSearchList base

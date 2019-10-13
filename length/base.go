@@ -13,6 +13,11 @@ type baseWithLimitedSize struct {
 	max int
 }
 
+type baseWithLimitedSizeWithLimitedFailure struct {
+	baseWithLimitedSize
+	fails int
+}
+
 func (b base) shorterThan(length int) int {
 	if b.size < length {
 		return 1
@@ -20,6 +25,18 @@ func (b base) shorterThan(length int) int {
 		return -1
 	}
 	return 0
+}
+
+func (b base) bruteForce(start, end int) int {
+	var i int
+	if end < 0 {
+		for i = start; b.shorterThan(i) < 0; i++ {
+		}
+	} else {
+		for i = start; b.shorterThan(i) < 0 && i < end; i++ {
+		}
+	}
+	return i
 }
 
 func (b base) binSearch(start int, bit uint) int {
