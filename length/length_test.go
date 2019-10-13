@@ -6,7 +6,7 @@ import (
 )
 
 func TestMain(t *testing.T) {
-	test := func(expected int) {
+	test := func(expected, max int) {
 		n := newNaiveList(expected)
 		actual := n.length()
 		if actual != expected {
@@ -17,10 +17,17 @@ func TestMain(t *testing.T) {
 		if actual != expected {
 			t.Errorf("want: %v actual: %v", expected, actual)
 		}
+		bs2 := newBinSearchList2(expected, max)
+		actual = bs2.length()
+		if actual != expected {
+			t.Errorf("want: %v actual: %v", expected, actual)
+		}
 	}
-	test(0)
+	test(0, 0)
 	for i := 0; i < 100; i++ {
-		test(rand.Intn(1000000))
+		max := rand.Intn(1000000)
+		num := rand.Intn(max)
+		test(num, max)
 	}
 
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"math"
 	"math/rand"
 
 	"github.com/pkg/profile"
@@ -12,6 +13,11 @@ type lengther interface {
 
 type base struct {
 	size int
+}
+
+type base2 struct {
+	base
+	max int
 }
 
 func (b base) shorterThan(length int) int {
@@ -70,13 +76,40 @@ func (b binSearchList) binSearch(start, bin int) int {
 	}
 }
 
+type binSearchList2 base2
+
+func newBinSearchList2(l, m int) binSearchList2 {
+	return binSearchList2{base{l}, m}
+}
+
+func (b binSearchList2) length() int {
+	n := int(math.Ceil(math.Log2(float64(b.max))))
+	return b.binSearch(0, n)
+}
+
+func (b binSearchList2) binSearch(start, bit int) int {
+	if bit == 0 {
+		return start
+	}
+	bit--
+	res := (b.base).shorterThan(start + 1<<bit)
+	switch {
+	case res < 0:
+		return b.binSearch(start+1<<bit, bit)
+	case res == 0:
+		return start + 1<<bit
+	default:
+		return b.binSearch(start, bit)
+	}
+}
+
 func main() {
 	var l int
 	N := 10000000
 	defer profile.Start(profile.ProfilePath(".")).Stop()
 	for i := 0; i < N; i++ {
 		rnd := rand.Intn(N)
-		s := newBinSearchList(rnd)
+		s := newBinSearchList2(rnd, rnd+1)
 		l = s.length()
 	}
 	_ = l
