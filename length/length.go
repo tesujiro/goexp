@@ -15,7 +15,7 @@ type base struct {
 	size int
 }
 
-type base2 struct {
+type baseWithLimitedSize struct {
 	base
 	max int
 }
@@ -76,18 +76,18 @@ func (b binSearchList) binSearch(start, bin int) int {
 	}
 }
 
-type binSearchList2 base2
+type binSearchListWithLimitedSize baseWithLimitedSize
 
-func newBinSearchList2(l, m int) binSearchList2 {
-	return binSearchList2{base{l}, m}
+func newBinSearchListWithLimitedSize(l, m int) binSearchListWithLimitedSize {
+	return binSearchListWithLimitedSize{base{l}, m}
 }
 
-func (b binSearchList2) length() int {
+func (b binSearchListWithLimitedSize) length() int {
 	n := int(math.Ceil(math.Log2(float64(b.max))))
 	return b.binSearch(0, n)
 }
 
-func (b binSearchList2) binSearch(start, bit int) int {
+func (b binSearchListWithLimitedSize) binSearch(start, bit int) int {
 	if bit == 0 {
 		return start
 	}
@@ -109,7 +109,7 @@ func main() {
 	defer profile.Start(profile.ProfilePath(".")).Stop()
 	for i := 0; i < N; i++ {
 		rnd := rand.Intn(N)
-		s := newBinSearchList2(rnd, rnd+1)
+		s := newBinSearchListWithLimitedSize(rnd, rnd+1)
 		l = s.length()
 	}
 	_ = l

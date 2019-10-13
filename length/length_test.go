@@ -17,7 +17,7 @@ func TestMain(t *testing.T) {
 		if actual != expected {
 			t.Errorf("want: %v actual: %v", expected, actual)
 		}
-		bs2 := newBinSearchList2(expected, max)
+		bs2 := newBinSearchListWithLimitedSize(expected, max)
 		actual = bs2.length()
 		if actual != expected {
 			t.Errorf("want: %v actual: %v", expected, actual)
