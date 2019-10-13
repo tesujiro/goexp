@@ -29,7 +29,7 @@ func (b base) shorterThan(length int) int {
 	return 0
 }
 
-func (b base) binSearch(start, bit int) int {
+func (b base) binSearch(start int, bit uint) int {
 	if bit == 0 {
 		return start
 	}
@@ -66,7 +66,7 @@ func newBinSearchList(l int) binSearchList {
 }
 
 func (b binSearchList) length() int {
-	var bit int = 0
+	var bit uint = 0
 	var start int = 0
 	for base(b).shorterThan(start) < 0 {
 		bit++
@@ -85,7 +85,7 @@ func newBinSearchListWithLimitedSize(l, m int) binSearchListWithLimitedSize {
 }
 
 func (b binSearchListWithLimitedSize) length() int {
-	n := int(math.Ceil(math.Log2(float64(b.max))))
+	n := uint(math.Ceil(math.Log2(float64(b.max))))
 	return baseWithLimitedSize(b).binSearch(0, n)
 }
 
