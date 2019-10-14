@@ -13,7 +13,7 @@ type baseWithLimitedSize struct {
 	max int
 }
 
-type baseWithLimitedSizeWithLimitedFailure struct {
+type baseWithLimitedSizeInLimitedFailure struct {
 	baseWithLimitedSize
 	fails int
 }

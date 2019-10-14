@@ -22,6 +22,11 @@ func TestMain(t *testing.T) {
 		if actual != expected {
 			t.Errorf("want: %v actual: %v", expected, actual)
 		}
+		lf := newSearchListWithLimitedFails(expected, max, 3)
+		actual = lf.length()
+		if actual != expected {
+			t.Errorf("want: %v actual: %v", expected, actual)
+		}
 	}
 	//test(6142, 10000)
 	//test(9432, 10000)
