@@ -53,5 +53,11 @@ func BenchmarkLength(b *testing.B) {
 			l = s.length()
 		}
 	})
+	b.Run("binSearchListWithLimitedSize", func(b *testing.B) {
+		for i := 1; i < b.N; i++ { // start from 1 because rand.Intn(0) panic
+			s = newBinSearchListWithLimitedSize(rand.Intn(i), i) // TODO; not the same test
+			l = s.length()
+		}
+	})
 	_ = l
 }
