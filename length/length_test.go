@@ -41,21 +41,27 @@ func TestMain(t *testing.T) {
 func BenchmarkLength(b *testing.B) {
 	var l int
 	var s lengther
-	b.Run("naiveList", func(b *testing.B) {
+	b.Run("naiveListWithoutMaxSize", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			s = newNaiveList(i)
 			l = s.length()
 		}
 	})
-	b.Run("binSearchList", func(b *testing.B) {
+	b.Run("binSearchListWithoutMaxSize", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			s = newBinSearchList(i)
 			l = s.length()
 		}
 	})
 	b.Run("binSearchListWithLimitedSize", func(b *testing.B) {
-		for i := 1; i < b.N; i++ { // start from 1 because rand.Intn(0) panic
-			s = newBinSearchListWithLimitedSize(rand.Intn(i), i) // TODO; not the same test
+		for i := 0; i < b.N; i++ {
+			s = newBinSearchListWithLimitedSize(rand.Intn(i+1), i) // TODO; not the same test
+			l = s.length()
+		}
+	})
+	b.Run("binSearchListInLimitedFails", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			s = newSearchListWithLimitedFails(rand.Intn(i+1), i, rand.Intn(10)) // TODO; not the same test
 			l = s.length()
 		}
 	})
