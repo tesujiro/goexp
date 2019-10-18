@@ -11,7 +11,10 @@ func newBinSearchListWithLimitedSize(l, m int) binSearchListWithLimitedSize {
 }
 
 func (b binSearchListWithLimitedSize) length() int {
-	n := uint(math.Ceil(math.Log2(float64(b.max))))
+	var n uint = 0
+	for ; 1<<n < b.max; n += 1 {
+	}
+
 	return baseWithLimitedSize(b).binSearch(0, n)
 }
 
