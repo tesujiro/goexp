@@ -31,12 +31,10 @@ func main() {
 		list := newBinSearchListWithLimitedSize(number[i], size[i])
 		l = list.length()
 	}
-	/*
-		fmt.Println("path3")
-		for i := 0; i < N; i++ {
-			list := newSearchListWithLimitedFails(number[i], size[i], fail[i])
-			l = list.length()
-		}
-	*/
+	fmt.Println("path3")
+	for i := 0; i < N; i++ {
+		list := newSearchListWithLimitedFails(number[i], size[i], fail[i])
+		l = list.length()
+	}
 	_ = l
 }
