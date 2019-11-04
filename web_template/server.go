@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -17,9 +18,14 @@ func newServer() *server {
 }
 
 func main() {
+	p := flag.Int("p", 80, "port number")
+	flag.Parse()
+	addr := fmt.Sprintf(":%d", *p)
+
 	s := newServer()
 	s.routes()
-	err := http.ListenAndServe("localhost:8000", s.router)
+	fmt.Println("Start listening on", addr)
+	err := http.ListenAndServe(addr, s.router)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -34,12 +40,15 @@ func (s *server) routes() {
 
 func (s *server) handleHello() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-cache")
 		fmt.Fprintf(w, "Hello, World")
 	}
 }
 
 func (s *server) handleDefault() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-cache")
+		fmt.Println("Default handler got a request.")
 		http.Redirect(w, r, "/static", 301)
 	}
 }
