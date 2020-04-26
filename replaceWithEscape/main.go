@@ -20,6 +20,6 @@ func main() {
 	//re := regexp.MustCompile(`(^(\\\\))&`)
 	//re := regexp.MustCompile(`(^\\\\)&`)
 	//re := regexp.MustCompile(`\\&`)
-	fmt.Println(re.ReplaceAllString(str, "${1}X"))
+	fmt.Println(re.ReplaceAllString(str, "${1}$${1}"))
 	//fmt.Println(re.ReplaceAllString(str, "X"))
 }
