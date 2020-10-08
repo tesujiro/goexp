@@ -8,20 +8,33 @@ import (
 
 const BlockSize = 1024
 
+func initFile(fp *os.File, size int) error {
+	blocks := size / BlockSize
+	nullBlock := make([]byte, BlockSize)
+	for i := 0; i < blocks; i++ {
+		_, err := fp.Write(nullBlock)
+		if err != nil {
+			return err
+
+		}
+	}
+	fmt.Printf("init %v bytes.\n", BlockSize*blocks)
+	return nil
+}
+
 func main() {
-	fp, err := os.Create("hello.binary")
+	fp, err := os.Create("hello.block")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	defer fp.Close()
 
-	null := make([]byte, BlockSize)
-
-	for i := range null {
-		null[i] = '.'
+	err = initFile(fp, BlockSize*1024*10)
+	if err != nil {
+		fmt.Println(err)
+		return
 	}
-	fp.Write(null)
 
 	numbers := []byte("0123456789")
 	fp.Seek(256, os.SEEK_SET)
@@ -38,6 +51,6 @@ func main() {
 			}
 			break
 		}
-		fmt.Println(string(b))
+		//fmt.Println(string(b))
 	}
 }
