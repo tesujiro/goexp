@@ -6,11 +6,17 @@ import (
 	"math/rand"
 
 	"github.com/syndtr/goleveldb/leveldb"
+	"github.com/syndtr/goleveldb/leveldb/filter"
+	"github.com/syndtr/goleveldb/leveldb/opt"
 	"github.com/syndtr/goleveldb/leveldb/util"
 )
 
 func main() {
-	db, err := leveldb.OpenFile("testdata", nil)
+
+	o := &opt.Options{
+		Filter: filter.NewBloomFilter(10),
+	}
+	db, err := leveldb.OpenFile("testdata", o)
 	if err != nil {
 		fmt.Printf("Open failed: %v", err)
 	}
@@ -45,7 +51,6 @@ func main() {
 
 	// Range: ALL
 	//iter := db.NewIterator(nil, nil)
-	// Range: random
 	start := keys[rand.Intn(len(keys)/2)]
 	limit := keys[len(keys)/2+rand.Intn(len(keys)/2)]
 	iter := db.NewIterator(&util.Range{Start: []byte(start), Limit: []byte(limit)}, nil)
